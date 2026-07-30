@@ -21,13 +21,18 @@ export function SearchResultsSection({ query, onPageChange }) {
   const filteredJobs = filterJobs(jobs, query)
   const totalPages = Math.ceil(filteredJobs.length / JOBS_PER_PAGE)
 
+  const pageStart = (query.page - 1) * JOBS_PER_PAGE
+  const pageJobs = filteredJobs.slice(pageStart, pageStart + JOBS_PER_PAGE)
+
   return (
     <section>
       <h2 style={{ textAlign: 'center' }}>Resultados de búsqueda</h2>
 
-      <JobListings jobs={filteredJobs} />
+      <JobListings jobs={pageJobs} />
 
-      <Pagination totalPages={totalPages} currentPage={query.page} onPageChange={onPageChange} />
+      {filteredJobs.length > 0 && (
+        <Pagination totalPages={totalPages} currentPage={query.page} onPageChange={onPageChange} />
+      )}
     </section>
   )
 }
