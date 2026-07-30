@@ -390,6 +390,7 @@ article {
 .jobs-listings {
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 1rem;
+  list-style: none;
 
   .job-listing-card {
     background: none;
@@ -414,10 +415,10 @@ article {
     p {
       margin-top: 0.5rem;
     }
+  }
 
-    &:last-child {
-      border-bottom: none;
-    }
+  li:last-child .job-listing-card {
+    border-bottom: none;
   }
 }
 

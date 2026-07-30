@@ -1,29 +1,35 @@
+import jobs from '../data.json'
+
 export function SearchResultsSection() {
   return (
     <section>
       <h2 style={{ textAlign: 'center' }}>Resultados de búsqueda</h2>
 
-      <div className="jobs-listings">
-        <article
-          className="job-listing-card"
-          data-modalidad="remoto"
-          data-nivel="senior"
-          data-technology="javascript"
-        >
-          <div>
-            <h3>Desarrollador de Software Senior</h3>
-            <small>
-              Tech Solutions Inc. <span aria-hidden="true">|</span> Remoto
-            </small>
-            <p>
-              Buscamos un ingeniero de software con experiencia en desarrollo web y conocimientos en
-              JavaScript, React y Node.js. El candidato ideal debe ser capaz de trabajar en equipo y
-              tener buenas habilidades de comunicación.
-            </p>
-          </div>
-          <button className="button-apply-job">Aplicar</button>
-        </article>
-      </div>
+      {jobs.length === 0 ? (
+        <p>No se han encontrado empleos que coincidan con los criterios de búsqueda.</p>
+      ) : (
+        <ul className="jobs-listings">
+          {jobs.map((job) => (
+            <li key={job.id}>
+              <article
+                className="job-listing-card"
+                data-modalidad={job.data.modalidad}
+                data-nivel={job.data.nivel}
+                data-technology={job.data.technology}
+              >
+                <div>
+                  <h3>{job.titulo}</h3>
+                  <small>
+                    {job.empresa} <span aria-hidden="true">|</span> {job.ubicacion}
+                  </small>
+                  <p>{job.descripcion}</p>
+                </div>
+                <button className="button-apply-job">Aplicar</button>
+              </article>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <nav className="pagination">
         <a href="#" aria-label="Ir a la página anterior" title="Página anterior">
