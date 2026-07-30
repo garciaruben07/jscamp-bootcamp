@@ -437,7 +437,14 @@ article {
   gap: 0.5rem;
   margin-block: 2rem;
 
-  a {
+  a,
+  button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: inherit;
+    font-family: inherit;
     display: flex;
     align-items: center;
     justify-content: center;

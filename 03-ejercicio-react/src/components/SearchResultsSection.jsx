@@ -1,62 +1,25 @@
+import { useState } from 'react'
 import jobs from '../data.json'
 import { JobListings } from './JobListings'
+import { Pagination } from './Pagination'
+
+/* Fijo como en el HTML de partida; en la sexta parte se calculará según los resultados */
+const TOTAL_PAGES = 5
 
 export function SearchResultsSection() {
+  const [currentPage, setCurrentPage] = useState(1)
+
   return (
     <section>
       <h2 style={{ textAlign: 'center' }}>Resultados de búsqueda</h2>
 
       <JobListings jobs={jobs} />
 
-      <nav className="pagination">
-        <a href="#" aria-label="Ir a la página anterior" title="Página anterior">
-          <svg
-            aria-hidden="true"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-            <path d="M15 6l-6 6l6 6" />
-          </svg>
-        </a>
-        <a data-page="1" href="#">
-          1
-        </a>
-        <a data-page="2" href="#">
-          2
-        </a>
-        <a data-page="3" href="#">
-          3
-        </a>
-        <a data-page="4" href="#">
-          4
-        </a>
-        <a data-page="5" href="#">
-          5
-        </a>
-        <a href="#" aria-label="Ir a la página siguiente" title="Página siguiente">
-          <svg
-            aria-hidden="true"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-            <path d="M9 6l6 6l-6 6" />
-          </svg>
-        </a>
-      </nav>
+      <Pagination
+        totalPages={TOTAL_PAGES}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+      />
     </section>
   )
 }
