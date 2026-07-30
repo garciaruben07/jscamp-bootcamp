@@ -27,7 +27,7 @@
   font-display: swap;
   font-weight: 100 900;
   src: url(https://cdn.jsdelivr.net/fontsource/fonts/inter:vf@latest/latin-wght-normal.woff2) format('woff2-variations');
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 body {
@@ -56,7 +56,7 @@ h1 {
   }
 }
 
-h1 + p {
+h1+p {
   text-wrap: balance;
   margin-bottom: 2rem
 }
@@ -68,8 +68,11 @@ header {
   padding: .5rem 1rem;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 2rem;
+  justify-content: center;
+  gap: .5rem 2rem;
+  flex-direction: column;
+  /* estilos para el responsive */
+  flex-wrap: wrap;
 
   h2 {
     font-size: 1.25rem;
@@ -90,7 +93,8 @@ nav {
     transition: color 0.2s;
     font-weight: 500;
 
-    &:hover, &:focus {
+    &:hover,
+    &:focus {
       color: var(--primary);
       outline: none;
     }
@@ -110,7 +114,7 @@ header div a {
 }
 
 /* Hero */
-main > section:nth-child(1) {
+main>section:nth-child(1) {
   height: 500px;
   text-align: center;
   display: flex;
@@ -122,7 +126,7 @@ main > section:nth-child(1) {
     padding-top: 36px;
   }
 
-  & > img {
+  &>img {
     position: absolute;
     width: 100%;
     height: 100%;
@@ -142,7 +146,7 @@ form {
   padding-inline: 1rem;
 }
 
-form > div {
+form>div {
   display: flex;
   align-items: center;
   background-color: var(--input-bg);
@@ -195,7 +199,7 @@ button {
     outline-offset: 2px;
   }
 
-  &:active { 
+  &:active {
     transform: scale(0.90)
   }
 
@@ -206,12 +210,12 @@ button {
 }
 
 /* Features Section */
-main > section:nth-child(2) {
+main>section:nth-child(2) {
   padding-inline: 1rem;
   background-color: var(--background);
   padding-top: 2rem;
 
-  & > header {
+  &>header {
     gap: 2px;
     flex-direction: column;
 
@@ -224,20 +228,20 @@ main > section:nth-child(2) {
     }
   }
 
-  & > div {
+  &>div {
     max-width: 1280px;
     margin: 0 auto;
   }
 }
 
-main > section:nth-child(2) h2 {
+main>section:nth-child(2) h2 {
   font-size: 1.875rem;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 1rem;
 }
 
-main > section:nth-child(2) > div > div:first-child > p {
+main>section:nth-child(2)>div>div:first-child>p {
   font-size: 1.125rem;
   color: var(--text-muted);
   max-width: 42rem;
@@ -245,7 +249,7 @@ main > section:nth-child(2) > div > div:first-child > p {
 }
 
 /* Grid de Features */
-main > section:nth-child(2) footer {
+main>section:nth-child(2) footer {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 16px
@@ -311,7 +315,7 @@ article {
 
 .search-bar {
   background: var(--input-bg);
-  padding: .25rem .5rem; 
+  padding: .25rem .5rem;
 }
 
 .search-filters {
@@ -373,6 +377,7 @@ form .search-bar {
 .jobs-listings {
   border: 1px solid rgba(255, 255, 255, .3);
   border-radius: 1rem;
+  list-style: none;
 }
 
 .jobs-listings article {
@@ -382,7 +387,7 @@ form .search-bar {
   border-bottom: 1px solid rgba(255, 255, 255, .3);
   margin: 0;
   padding: 1.5rem;
-  
+
   display: flex;
   align-items: start;
   gap: 1rem;
@@ -394,7 +399,7 @@ form .search-bar {
   background-color: rgba(255, 255, 255, .02);
 }
 
-.jobs-listings article:last-child {
+.jobs-listings li:last-child article {
   border-bottom: none;
 }
 
@@ -464,30 +469,39 @@ form .search-bar {
   transform: scale(0.98);
 }
 
+/* otra manera de indicar las media queries */
+@media (width >=768px) {
+  header {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .jobs-search h1 {
     font-size: 2rem;
   }
-  
+
   .search-filters {
     flex-direction: column;
   }
-  
+
   .search-filters select {
     width: 100%;
   }
-  
+
   .jobs-listings article {
     flex-direction: column;
     align-items: stretch;
     gap: 1rem;
   }
-  
+
   .btn-apply {
     width: 100%;
   }
 }
+
 /* Paginación */
 .pagination-wrapper {
   display: flex;
@@ -501,6 +515,9 @@ form .search-bar {
   list-style: none;
   gap: 0.5rem;
   align-items: center;
+  /* alineamos la paginación */
+  margin-block: 2rem;
+  margin-inline: auto;
 }
 
 .pagination li {
@@ -555,7 +572,7 @@ form .search-bar {
   .pagination {
     gap: 0.25rem;
   }
-  
+
   .pagination li a {
     min-width: 36px;
     height: 36px;
