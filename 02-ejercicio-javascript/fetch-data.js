@@ -9,6 +9,16 @@ fetch('./data.json')
     return response.json()
   })
   .then((jobs) => {
+    /* 
+    Esto es algo que no lo vimos en el bootcamp pero me parece valioso explicarlo aquí:
+    Cuando dentro de un bucle estamos agregando al DOM elementos por cada iteración, esto tiene un costo grande dependiendo de la cantidad de elementos que haya.
+
+    Para evitar hacer un repintado por iteración, existe `createDocumentFragment()`.
+    Lo que hace es crear una "caja virtual" en donde vamos a agregar todos los elementos de la iteración, y luego UNA sola vez modificamos el DOM agregando todo junto, no uno por vez.
+
+    A nivel de rendimiento cuando hay muchos elementos puede sentirse mejor la web.
+    */
+    const documentFragment = document.createDocumentFragment()
     jobs.forEach((job) => {
       const listItem = document.createElement('li')
       const article = document.createElement('article')
@@ -32,8 +42,10 @@ fetch('./data.json')
       `
 
       listItem.appendChild(article)
-      jobsList.appendChild(listItem)
+      documentFragment.appendChild(listItem)
     })
+
+    jobsList.appendChild(documentFragment)
   })
   .catch((error) => {
     jobsList.innerHTML = '<li><p>No se pudieron cargar los empleos. Vuelve a intentarlo más tarde.</p></li>'
