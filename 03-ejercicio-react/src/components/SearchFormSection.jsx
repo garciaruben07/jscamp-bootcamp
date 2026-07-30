@@ -1,10 +1,15 @@
-export function SearchFormSection() {
+export function SearchFormSection({ searchInput, filters, onSearchInputChange, onFilterChange }) {
+  /* La búsqueda es en vivo: dejar que Enter envíe el formulario recargaría la página */
+  const handleSubmit = (event) => {
+    event.preventDefault()
+  }
+
   return (
     <section className="jobs-search">
       <h1>Encuentra tu próximo trabajo</h1>
       <p>Explora miles de oportunidades en el sector tecnológico.</p>
 
-      <form id="empleos-search-form" role="search">
+      <form id="empleos-search-form" role="search" onSubmit={handleSubmit}>
         <div className="search-bar">
           <svg
             aria-hidden="true"
@@ -28,11 +33,18 @@ export function SearchFormSection() {
             type="text"
             name="search-value"
             placeholder="Buscar trabajos, empresas o habilidades"
+            value={searchInput}
+            onChange={(event) => onSearchInputChange(event.target.value)}
           />
         </div>
 
         <div className="search-filters">
-          <select name="technology-value" id="filter-technology">
+          <select
+            name="technology-value"
+            id="filter-technology"
+            value={filters.technology}
+            onChange={(event) => onFilterChange('technology', event.target.value)}
+          >
             <option value="">Tecnología</option>
             <optgroup label="Tecnologías populares">
               <option value="javascript">JavaScript</option>
@@ -50,7 +62,12 @@ export function SearchFormSection() {
             <option value="php">PHP</option>
           </select>
 
-          <select name="location-value" id="filter-location">
+          <select
+            name="location-value"
+            id="filter-location"
+            value={filters.location}
+            onChange={(event) => onFilterChange('location', event.target.value)}
+          >
             <option value="">Ubicación</option>
             <option value="remoto">Remoto</option>
             <option value="cdmx">Ciudad de México</option>
@@ -59,7 +76,12 @@ export function SearchFormSection() {
             <option value="barcelona">Barcelona</option>
           </select>
 
-          <select name="experience-level-value" id="filter-experience-level">
+          <select
+            name="experience-level-value"
+            id="filter-experience-level"
+            value={filters.level}
+            onChange={(event) => onFilterChange('level', event.target.value)}
+          >
             <option value="">Nivel de experiencia</option>
             <option value="junior">Junior</option>
             <option value="mid">Mid-level</option>

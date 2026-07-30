@@ -38,7 +38,7 @@ export function Pagination({ totalPages, currentPage, onPageChange }) {
 
       <button
         onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
+        disabled={currentPage >= totalPages}
         aria-label="Ir a la página siguiente"
         title="Página siguiente"
       >

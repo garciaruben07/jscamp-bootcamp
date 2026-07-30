@@ -1,25 +1,33 @@
-import { useState } from 'react'
 import jobs from '../data.json'
 import { JobListings } from './JobListings'
 import { Pagination } from './Pagination'
 
-/* Fijo como en el HTML de partida; en la sexta parte se calculará según los resultados */
-const TOTAL_PAGES = 5
+const JOBS_PER_PAGE = 5
 
-export function SearchResultsSection() {
-  const [currentPage, setCurrentPage] = useState(1)
+function filterJobs(allJobs, { search, technology, location, level }) {
+  const searchText = search.trim().toLowerCase()
+
+  return allJobs.filter((job) => {
+    const matchesSearch = job.titulo.toLowerCase().includes(searchText)
+    const matchesTechnology = technology === '' || job.data.technology === technology
+    const matchesLocation = location === '' || job.data.modalidad === location
+    const matchesLevel = level === '' || job.data.nivel === level
+
+    return matchesSearch && matchesTechnology && matchesLocation && matchesLevel
+  })
+}
+
+export function SearchResultsSection({ query, onPageChange }) {
+  const filteredJobs = filterJobs(jobs, query)
+  const totalPages = Math.ceil(filteredJobs.length / JOBS_PER_PAGE)
 
   return (
     <section>
       <h2 style={{ textAlign: 'center' }}>Resultados de búsqueda</h2>
 
-      <JobListings jobs={jobs} />
+      <JobListings jobs={filteredJobs} />
 
-      <Pagination
-        totalPages={TOTAL_PAGES}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
-      />
+      <Pagination totalPages={totalPages} currentPage={query.page} onPageChange={onPageChange} />
     </section>
   )
 }
