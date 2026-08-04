@@ -1,16 +1,10 @@
-import { useRouter } from '../hooks/useRouter'
+import { Link as RouterLink } from 'react-router'
 
+/* Mantiene la interfaz de siempre (href) pero navega con el Link de React Router */
 export function Link({ href, children, ...restOfProps }) {
-  const { navigateTo } = useRouter()
-
-  const handleClick = (event) => {
-    event.preventDefault()
-    navigateTo(href)
-  }
-
   return (
-    <a href={href} {...restOfProps} onClick={handleClick}>
+    <RouterLink to={href} {...restOfProps}>
       {children}
-    </a>
+    </RouterLink>
   )
 }
