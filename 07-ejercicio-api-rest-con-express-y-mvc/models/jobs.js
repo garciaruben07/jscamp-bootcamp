@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import jobs from '../jobs.json' with { type: 'json' }
 
 export class JobModel {
@@ -34,5 +35,49 @@ export class JobModel {
       data: resultado.slice(offset, offset + limit),
       total: resultado.length,
     }
+  }
+
+  static getById(id) {
+    return jobs.find((job) => job.id === id) ?? null
+  }
+
+  static create({ titulo, empresa, ubicacion, descripcion, data, content }) {
+    const nuevoJob = { id: randomUUID(), titulo, empresa, ubicacion, descripcion, data, content }
+
+    jobs.push(nuevoJob)
+
+    return nuevoJob
+  }
+
+  /* PUT reemplaza el job entero, conservando solo el id */
+  static update(id, { titulo, empresa, ubicacion, descripcion, data, content }) {
+    const indice = jobs.findIndex((job) => job.id === id)
+
+    if (indice === -1) return null
+
+    jobs[indice] = { id, titulo, empresa, ubicacion, descripcion, data, content }
+
+    return jobs[indice]
+  }
+
+  /* PATCH solo pisa los campos recibidos y deja intactos los demás */
+  static partialUpdate(id, cambios) {
+    const indice = jobs.findIndex((job) => job.id === id)
+
+    if (indice === -1) return null
+
+    jobs[indice] = { ...jobs[indice], ...cambios, id }
+
+    return jobs[indice]
+  }
+
+  static delete(id) {
+    const indice = jobs.findIndex((job) => job.id === id)
+
+    if (indice === -1) return null
+
+    const [eliminado] = jobs.splice(indice, 1)
+
+    return eliminado
   }
 }
