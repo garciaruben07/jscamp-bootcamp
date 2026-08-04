@@ -29,6 +29,9 @@ por Lead da 0 resultados y Mid-level da 1. No quise mapear valores por mi cuenta
 mid-level) porque me parecía inventarme el contrato. ¿Era lo esperado o los datos deberían estar
 alineados con los select?
 
+**Respuesta:** Lo hiciste perfecto, la correlación entre los filtros y los datos fue un error que tuvimos al inicio de la construcción del ejercicio, que después no lo pudimos corregir por la cantidad de alumnos que ya lo habían hecho. Por cuestión de consistencia, lo dejamos así.
+Lo hiciste excelente!
+
 ## Sexta parte
 
 <!-- Dudas de la sexta parte del ejercicio -->
@@ -39,6 +42,8 @@ Dice el enunciado mover el contenido de App.jsx a la página Search, pero el esq
 no trae header ni footer, así que moviéndolo todo literal la home y el 404 se quedaban sin
 navegación. Al final dejé el header y el footer en App envolviendo las rutas, y cada página solo
 con su main. ¿Es una lectura correcta o esperabais otra estructura?
+
+**Respuesta:** Lectura correcta, muy bien resuelto!
 
 ## Ejercicio extra
 
