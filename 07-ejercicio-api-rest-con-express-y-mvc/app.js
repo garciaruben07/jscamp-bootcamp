@@ -1,11 +1,13 @@
 import express from 'express'
 import { jobsRouter } from './routes/jobs.js'
+import { corsMiddleware } from './middlewares/cors.js'
 import { DEFAULTS } from './config.js'
 
 const app = express()
 
 /* Parsea el cuerpo JSON de las peticiones y lo deja en req.body */
 app.use(express.json())
+app.use(corsMiddleware())
 
 app.use('/jobs', jobsRouter)
 
