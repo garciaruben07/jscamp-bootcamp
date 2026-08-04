@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from './Link'
 
 export function JobCard({ job }) {
   const [isApplied, setIsApplied] = useState(false)
@@ -18,7 +19,9 @@ export function JobCard({ job }) {
       data-technology={job.data.technology}
     >
       <div>
-        <h3>{job.titulo}</h3>
+        <h3>
+          <Link href={`/job/${job.id}`}>{job.titulo}</Link>
+        </h3>
         <small>
           {job.empresa} | {job.ubicacion}
         </small>
