@@ -1,11 +1,107 @@
 import { createServer } from 'node:http'
+import { randomUUID } from 'node:crypto'
+import { json } from 'node:stream/consumers'
 
 process.loadEnvFile()
 
 const port = process.env.PORT || 3000
 
-const server = createServer((req, res) => {
-  // TODO: Aquí irá la lógica del servidor
+/* Toda la API responde JSON, así que centralizamos cabecera, estado y serialización */
+function enviarJson(res, statusCode, datos) {
+  res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' })
+  res.end(JSON.stringify(datos))
+}
+
+/* Devuelve null si el parámetro no viene o no es un número usable, para poder ignorarlo */
+function leerNumero(searchParams, clave) {
+  const valor = searchParams.get(clave)
+
+  if (valor === null || valor.trim() === '') return null
+
+  const numero = Number(valor)
+
+  return Number.isNaN(numero) ? null : numero
+}
+
+/* Cada filtro se aplica solo si viene su parámetro, así se pueden combinar entre ellos */
+function filtrarUsuarios(users, searchParams) {
+  const name = searchParams.get('name')
+  const minAge = leerNumero(searchParams, 'minAge')
+  const maxAge = leerNumero(searchParams, 'maxAge')
+
+  let resultado = users
+
+  if (name !== null) {
+    const busqueda = name.trim().toLowerCase()
+    resultado = resultado.filter((user) => user.name.toLowerCase().includes(busqueda))
+  }
+
+  if (minAge !== null) {
+    resultado = resultado.filter((user) => user.age >= minAge)
+  }
+
+  if (maxAge !== null) {
+    resultado = resultado.filter((user) => user.age <= maxAge)
+  }
+
+  return resultado
+}
+
+/* La paginación va al final: se pagina sobre lo ya filtrado */
+function paginarUsuarios(users, searchParams) {
+  const limit = leerNumero(searchParams, 'limit')
+  const offset = leerNumero(searchParams, 'offset')
+
+  if (limit === null && offset === null) return users
+
+  /* Un offset negativo haría que slice contase desde el final */
+  const desde = Math.max(0, offset ?? 0)
+  const hasta = limit === null ? users.length : desde + Math.max(0, limit)
+
+  return users.slice(desde, hasta)
+}
+
+const server = createServer(async (req, res) => {
+  /* req.url llega sin origen, así que hace falta una base para poder parsearlo */
+  const { pathname, searchParams } = new URL(req.url, `http://${req.headers.host}`)
+
+  if (req.method === 'GET' && pathname === '/users') {
+    const filtrados = filtrarUsuarios(users, searchParams)
+
+    return enviarJson(res, 200, paginarUsuarios(filtrados, searchParams))
+  }
+
+  if (req.method === 'POST' && pathname === '/users') {
+    let body
+
+    try {
+      body = await json(req)
+    } catch {
+      return enviarJson(res, 400, { error: 'El cuerpo de la petición no es un JSON válido' })
+    }
+
+    const { name, age } = body ?? {}
+
+    if (typeof name !== 'string' || name.trim() === '') {
+      return enviarJson(res, 400, { error: 'El campo name es obligatorio y debe ser texto' })
+    }
+
+    if (typeof age !== 'number' || !Number.isInteger(age) || age < 0) {
+      return enviarJson(res, 400, { error: 'El campo age es obligatorio y debe ser un entero positivo' })
+    }
+
+    const nuevoUsuario = { id: randomUUID(), name: name.trim(), age }
+    users.push(nuevoUsuario)
+
+    return enviarJson(res, 201, nuevoUsuario)
+  }
+
+  if (req.method === 'GET' && pathname === '/health') {
+    return enviarJson(res, 200, { status: 'ok', uptime: process.uptime() })
+  }
+
+  /* Si ninguna ruta ha respondido, no existe */
+  return enviarJson(res, 404, { error: 'Ruta no encontrada' })
 })
 
 server.listen(port, () => {
