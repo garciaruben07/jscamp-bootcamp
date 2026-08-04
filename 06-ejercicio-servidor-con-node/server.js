@@ -1,4 +1,6 @@
 import { createServer } from 'node:http'
+import { randomUUID } from 'node:crypto'
+import { json } from 'node:stream/consumers'
 
 process.loadEnvFile()
 
@@ -10,12 +12,37 @@ function enviarJson(res, statusCode, datos) {
   res.end(JSON.stringify(datos))
 }
 
-const server = createServer((req, res) => {
+const server = createServer(async (req, res) => {
   /* req.url llega sin origen, así que hace falta una base para poder parsearlo */
   const { pathname } = new URL(req.url, `http://${req.headers.host}`)
 
   if (req.method === 'GET' && pathname === '/users') {
     return enviarJson(res, 200, users)
+  }
+
+  if (req.method === 'POST' && pathname === '/users') {
+    let body
+
+    try {
+      body = await json(req)
+    } catch {
+      return enviarJson(res, 400, { error: 'El cuerpo de la petición no es un JSON válido' })
+    }
+
+    const { name, age } = body ?? {}
+
+    if (typeof name !== 'string' || name.trim() === '') {
+      return enviarJson(res, 400, { error: 'El campo name es obligatorio y debe ser texto' })
+    }
+
+    if (typeof age !== 'number' || !Number.isInteger(age) || age < 0) {
+      return enviarJson(res, 400, { error: 'El campo age es obligatorio y debe ser un entero positivo' })
+    }
+
+    const nuevoUsuario = { id: randomUUID(), name: name.trim(), age }
+    users.push(nuevoUsuario)
+
+    return enviarJson(res, 201, nuevoUsuario)
   }
 })
 
