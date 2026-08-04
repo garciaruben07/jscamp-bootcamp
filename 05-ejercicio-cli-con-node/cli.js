@@ -10,6 +10,9 @@ const args = process.argv.slice(2)
 /* El directorio es el primer argumento que no sea un flag; si no lo hay, el actual */
 const directorio = args.find((arg) => !arg.startsWith('--')) ?? '.'
 
+/* Los flags se buscan en todo el array, así el usuario puede ponerlos donde quiera */
+const orden = args.includes('--asc') ? 'asc' : args.includes('--desc') ? 'desc' : null
+
 function formatearTamano(bytes) {
   let valor = bytes
   let unidad = 0
@@ -38,6 +41,15 @@ async function obtenerEntradas(directorio) {
   )
 }
 
+function ordenar(entradas, orden) {
+  if (orden === null) return entradas
+
+  /* Copia con toSorted para no mutar el array original */
+  const ordenadas = entradas.toSorted((a, b) => a.nombre.localeCompare(b.nombre))
+
+  return orden === 'asc' ? ordenadas : ordenadas.toReversed()
+}
+
 function mostrar(entradas) {
   /* La columna se ajusta al nombre más largo para que los tamaños queden alineados */
   const ancho = Math.max(ANCHO_MINIMO, ...entradas.map((entrada) => entrada.nombre.length))
@@ -51,4 +63,4 @@ function mostrar(entradas) {
 }
 
 const entradas = await obtenerEntradas(directorio)
-mostrar(entradas)
+mostrar(ordenar(entradas, orden))
