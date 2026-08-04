@@ -1,4 +1,8 @@
+import { NavLink } from 'react-router'
 import { Link } from './Link'
+
+/* NavLink expone isActive en className: marcamos la ruta en la que estamos */
+const navLinkClass = ({ isActive }) => (isActive ? 'is-active' : '')
 
 export function Header() {
   return (
@@ -6,6 +10,7 @@ export function Header() {
       <Link href="/" style={{ textDecoration: 'none' }}>
         <h1 style={{ color: 'white' }}>
           <svg
+            aria-hidden="true"
             fill="none"
             stroke="currentColor"
             strokeLinecap="round"
@@ -22,10 +27,18 @@ export function Header() {
       </Link>
 
       <nav>
-        <Link href="/search">Empleos</Link>
+        <NavLink to="/" className={navLinkClass} end>
+          Inicio
+        </NavLink>
 
-        <a href="/search">Sin SPA</a>
+        <NavLink to="/search" className={navLinkClass}>
+          Empleos
+        </NavLink>
       </nav>
+
+      <button type="button" className="button-login">
+        Iniciar sesión
+      </button>
     </header>
   )
 }

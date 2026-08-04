@@ -430,6 +430,39 @@ article {
   }
 }
 
+/* Enlace activo de la navegación principal */
+nav a.is-active {
+  color: var(--primary-light);
+  font-weight: 700;
+}
+
+/* Botón de sesión del header */
+.button-login {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  background-color: #334155;
+}
+
+/* Acciones de cada oferta */
+.job-listing-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.button-favorite {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  background: none;
+  border: 1px solid var(--border);
+
+  &[aria-pressed='true'] {
+    border-color: var(--primary-light);
+    color: var(--primary-light);
+  }
+}
+
 /* Título de la tarjeta como enlace al detalle */
 .job-listing-card h3 a {
   color: inherit;

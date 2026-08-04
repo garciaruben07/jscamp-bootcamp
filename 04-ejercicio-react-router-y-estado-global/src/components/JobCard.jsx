@@ -11,6 +11,8 @@ export function JobCard({ job }) {
   const buttonClasses = isApplied ? 'button-apply-job is-applied' : 'button-apply-job'
   const buttonText = isApplied ? 'Aplicado' : 'Aplicar'
 
+  const isFavorite = false
+
   return (
     <article
       className="job-listing-card"
@@ -27,9 +29,15 @@ export function JobCard({ job }) {
         </small>
         <p>{job.descripcion}</p>
       </div>
-      <button className={buttonClasses} onClick={handleApplyClick}>
-        {buttonText}
-      </button>
+      <div className="job-listing-card-actions">
+        <button className={buttonClasses} onClick={handleApplyClick}>
+          {buttonText}
+        </button>
+
+        <button type="button" className="button-favorite" aria-pressed={isFavorite}>
+          {isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+        </button>
+      </div>
     </article>
   )
 }
