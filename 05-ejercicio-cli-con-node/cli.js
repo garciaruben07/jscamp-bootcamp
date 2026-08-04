@@ -26,6 +26,18 @@ function formatearTamano(bytes) {
   return `${unidad === 0 ? valor : valor.toFixed(2)} ${UNIDADES[unidad]}`
 }
 
+/* process.permission solo existe si Node arrancó con --permission */
+function comprobarPermisos(directorio) {
+  if (process.permission === undefined) return
+
+  if (!process.permission.has('fs.read', directorio)) {
+    console.error(`No tienes permiso de lectura sobre "${directorio}".`)
+    console.error(`Vuelve a ejecutarlo dando acceso a esa ruta:`)
+    console.error(`  node --permission --allow-fs-read=${directorio} cli.js ${directorio}`)
+    process.exit(1)
+  }
+}
+
 async function obtenerEntradas(directorio) {
   const nombres = await readdir(directorio)
 
@@ -76,5 +88,25 @@ function mostrar(entradas) {
   }
 }
 
-const entradas = await obtenerEntradas(directorio)
-mostrar(ordenar(filtrar(entradas, filtro), orden))
+comprobarPermisos(directorio)
+
+try {
+  const entradas = await obtenerEntradas(directorio)
+  mostrar(ordenar(filtrar(entradas, filtro), orden))
+} catch (error) {
+  if (error.code === 'ERR_ACCESS_DENIED') {
+    console.error(`No tienes permiso de lectura sobre "${directorio}".`)
+    console.error(`Vuelve a ejecutarlo dando acceso a esa ruta:`)
+    console.error(`  node --permission --allow-fs-read=${directorio} cli.js ${directorio}`)
+  } else if (error.code === 'EACCES') {
+    console.error(`El sistema no te deja leer "${directorio}": permisos insuficientes.`)
+  } else if (error.code === 'ENOENT') {
+    console.error(`El directorio "${directorio}" no existe.`)
+  } else if (error.code === 'ENOTDIR') {
+    console.error(`"${directorio}" no es un directorio.`)
+  } else {
+    console.error(`No se pudo listar "${directorio}": ${error.message}`)
+  }
+
+  process.exit(1)
+}
