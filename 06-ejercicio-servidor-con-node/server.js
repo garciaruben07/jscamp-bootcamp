@@ -44,6 +44,13 @@ const server = createServer(async (req, res) => {
 
     return enviarJson(res, 201, nuevoUsuario)
   }
+
+  if (req.method === 'GET' && pathname === '/health') {
+    return enviarJson(res, 200, { status: 'ok', uptime: process.uptime() })
+  }
+
+  /* Si ninguna ruta ha respondido, no existe */
+  return enviarJson(res, 404, { error: 'Ruta no encontrada' })
 })
 
 server.listen(port, () => {
