@@ -26,14 +26,18 @@ function formatearTamano(bytes) {
   return `${unidad === 0 ? valor : valor.toFixed(2)} ${UNIDADES[unidad]}`
 }
 
+function avisarSinPermiso(directorio) {
+  console.error(`No tienes permiso de lectura sobre "${directorio}".`)
+  console.error('Vuelve a ejecutarlo dando acceso a esa ruta:')
+  console.error(`  node --permission --allow-fs-read=. --allow-fs-read=${directorio} cli.js ${directorio}`)
+}
+
 /* process.permission solo existe si Node arrancó con --permission */
 function comprobarPermisos(directorio) {
   if (process.permission === undefined) return
 
   if (!process.permission.has('fs.read', directorio)) {
-    console.error(`No tienes permiso de lectura sobre "${directorio}".`)
-    console.error(`Vuelve a ejecutarlo dando acceso a esa ruta:`)
-    console.error(`  node --permission --allow-fs-read=${directorio} cli.js ${directorio}`)
+    avisarSinPermiso(directorio)
     process.exit(1)
   }
 }
@@ -95,9 +99,7 @@ try {
   mostrar(ordenar(filtrar(entradas, filtro), orden))
 } catch (error) {
   if (error.code === 'ERR_ACCESS_DENIED') {
-    console.error(`No tienes permiso de lectura sobre "${directorio}".`)
-    console.error(`Vuelve a ejecutarlo dando acceso a esa ruta:`)
-    console.error(`  node --permission --allow-fs-read=${directorio} cli.js ${directorio}`)
+    avisarSinPermiso(directorio)
   } else if (error.code === 'EACCES') {
     console.error(`El sistema no te deja leer "${directorio}": permisos insuficientes.`)
   } else if (error.code === 'ENOENT') {
