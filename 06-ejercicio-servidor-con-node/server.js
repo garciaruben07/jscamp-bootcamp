@@ -4,8 +4,19 @@ process.loadEnvFile()
 
 const port = process.env.PORT || 3000
 
+/* Toda la API responde JSON, así que centralizamos cabecera, estado y serialización */
+function enviarJson(res, statusCode, datos) {
+  res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' })
+  res.end(JSON.stringify(datos))
+}
+
 const server = createServer((req, res) => {
-  // TODO: Aquí irá la lógica del servidor
+  /* req.url llega sin origen, así que hace falta una base para poder parsearlo */
+  const { pathname } = new URL(req.url, `http://${req.headers.host}`)
+
+  if (req.method === 'GET' && pathname === '/users') {
+    return enviarJson(res, 200, users)
+  }
 })
 
 server.listen(port, () => {
