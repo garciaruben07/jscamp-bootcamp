@@ -13,5 +13,6 @@ export function Link({ href, target, ...props }) {
     }
   }
 
-  return <a href={href} target={target} onClick={handleClick} {...props} />
+  // La desestructuración de las props es necesario que estén al inicio para que no se sobrescriban los valores de href, target y onClick, en cas de que el usuario los coloque por medio del componente padre.
+  return <a {...props} href={href} target={target} onClick={handleClick}  />
 }
