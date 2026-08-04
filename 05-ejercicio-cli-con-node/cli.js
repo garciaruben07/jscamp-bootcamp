@@ -12,6 +12,7 @@ const directorio = args.find((arg) => !arg.startsWith('--')) ?? '.'
 
 /* Los flags se buscan en todo el array, así el usuario puede ponerlos donde quiera */
 const orden = args.includes('--asc') ? 'asc' : args.includes('--desc') ? 'desc' : null
+const filtro = args.includes('--files') ? 'files' : args.includes('--folders') ? 'folders' : null
 
 function formatearTamano(bytes) {
   let valor = bytes
@@ -41,6 +42,14 @@ async function obtenerEntradas(directorio) {
   )
 }
 
+function filtrar(entradas, filtro) {
+  if (filtro === null) return entradas
+
+  return entradas.filter((entrada) =>
+    filtro === 'folders' ? entrada.esDirectorio : !entrada.esDirectorio
+  )
+}
+
 function ordenar(entradas, orden) {
   if (orden === null) return entradas
 
@@ -51,6 +60,11 @@ function ordenar(entradas, orden) {
 }
 
 function mostrar(entradas) {
+  if (entradas.length === 0) {
+    console.log('No hay nada que mostrar con esos criterios.')
+    return
+  }
+
   /* La columna se ajusta al nombre más largo para que los tamaños queden alineados */
   const ancho = Math.max(ANCHO_MINIMO, ...entradas.map((entrada) => entrada.nombre.length))
 
@@ -63,4 +77,4 @@ function mostrar(entradas) {
 }
 
 const entradas = await obtenerEntradas(directorio)
-mostrar(ordenar(entradas, orden))
+mostrar(ordenar(filtrar(entradas, filtro), orden))
