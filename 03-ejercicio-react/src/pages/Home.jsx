@@ -1,8 +1,23 @@
+import { navigate } from '../hooks/usePath'
+
 export function HomePage() {
+  const handleSubmit = (event) => {
+    event.preventDefault()
+
+    const formData = new FormData(event.target)
+    const search = formData.get('search').trim()
+
+    const params = new URLSearchParams()
+    if (search !== '') params.set('search', search)
+
+    const queryString = params.toString()
+    navigate(queryString === '' ? '/search' : `/search?${queryString}`)
+  }
+
   return (
     <main>
       <section>
-        <img src="./background.webp" width="200" />
+        <img src="/background.webp" alt="" width="200" />
 
         <h1>Encuentra el trabajo de tus sueños</h1>
 
@@ -10,9 +25,10 @@ export function HomePage() {
           Únete a la comunidad más grande de desarrolladores y encuentra tu próxima oportunidad.
         </p>
 
-        <form role="search">
+        <form role="search" onSubmit={handleSubmit}>
           <div>
             <svg
+              aria-hidden="true"
               width="24"
               height="24"
               viewBox="0 0 24 24"
