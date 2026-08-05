@@ -474,6 +474,12 @@ nav a.is-active {
   }
 }
 
+.job-detail-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
 /* Página de detalle de un empleo */
 .job-detail {
   h1 {

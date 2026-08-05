@@ -1,9 +1,40 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import snarkdown from 'snarkdown'
+import { useFavoritesStore } from '../store/favoritesStore'
 
 function MarkdownContent({ markdown }) {
   return <div className="markdown-content" dangerouslySetInnerHTML={{ __html: snarkdown(markdown) }} />
+}
+
+/* Mismo comportamiento que en la tarjeta de resultados, para que la oferta se pueda
+   gestionar también desde su propia página */
+function DetailActions({ job }) {
+  const [isApplied, setIsApplied] = useState(false)
+
+  const isFavorite = useFavoritesStore((state) => state.favorites.includes(job.id))
+  const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite)
+
+  return (
+    <div className="job-detail-actions">
+      <button
+        className={isApplied ? 'button-apply-job is-applied' : 'button-apply-job'}
+        onClick={() => setIsApplied(true)}
+        disabled={isApplied}
+      >
+        {isApplied ? 'Aplicado' : 'Aplicar'}
+      </button>
+
+      <button
+        type="button"
+        className="button-favorite"
+        aria-pressed={isFavorite}
+        onClick={() => toggleFavorite(job.id)}
+      >
+        {isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+      </button>
+    </div>
+  )
 }
 
 export function DetailPage() {
@@ -49,6 +80,8 @@ export function DetailPage() {
           <small>
             {job.empresa} <span aria-hidden="true">|</span> {job.ubicacion}
           </small>
+
+          <DetailActions job={job} />
 
           <section>
             <h2>Descripción</h2>
