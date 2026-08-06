@@ -36,8 +36,14 @@ export function Pagination({ currentPage = 1, totalPages = 10, onPageChange }) {
     }
   }
 
+  /* searchParams.toString() ya devuelve la query sin el "?", así que hay que copiarlo,
+     cambiar solo la página y anteponer la ruta: si no, el href queda como una ruta
+     inexistente y pierde los filtros al abrirlo en otra pestaña */
   const buildPageUrl = (page) => {
-    return `${searchParams.toString()}?page=${page}`
+    const next = new URLSearchParams(searchParams)
+    next.set('page', page)
+
+    return `/search?${next.toString()}`
   }
 
   return (
