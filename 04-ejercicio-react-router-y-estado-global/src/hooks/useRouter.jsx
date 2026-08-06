@@ -1,23 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useNavigate, useLocation } from 'react-router'
 
+/* Misma interfaz que devolvía el hook artesanal, con React Router por dentro */
 export function useRouter() {
-  const [currentPath, setCurrentPath] = useState(window.location.pathname)
-
-  useEffect(() => {
-    const handleLocationChange = () => {
-      setCurrentPath(window.location.pathname)
-    }
-
-    window.addEventListener('popstate', handleLocationChange)
-  }, [])
-
-  function navigateTo(path) {
-    window.history.pushState({}, '', path)
-    window.dispatchEvent(new PopStateEvent('popstate'))
-  }
+  const navigate = useNavigate()
+  const location = useLocation()
 
   return {
-    currentPath,
-    navigateTo,
+    currentPath: location.pathname,
+    navigateTo: navigate,
   }
 }

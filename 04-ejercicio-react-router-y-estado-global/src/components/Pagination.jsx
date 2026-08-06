@@ -40,9 +40,16 @@ export function Pagination({ currentPage = 1, totalPages = 10, onPageChange }) {
   }
 
   return (
-    <nav className={styles.pagination}>
-      <a href={buildPageUrl(currentPage - 1)} style={stylePrevButton} onClick={handlePrevClick}>
+    <nav className={styles.pagination} aria-label="Paginación de los resultados">
+      <a
+        href={buildPageUrl(currentPage - 1)}
+        style={stylePrevButton}
+        onClick={handlePrevClick}
+        aria-label="Página anterior"
+        title="Página anterior"
+      >
         <svg
+          aria-hidden="true"
           width="16"
           height="16"
           viewBox="0 0 24 24"
@@ -63,14 +70,22 @@ export function Pagination({ currentPage = 1, totalPages = 10, onPageChange }) {
           data-page={page}
           href={buildPageUrl(page)}
           className={currentPage === page ? styles.isActive : ''}
+          aria-current={currentPage === page ? 'page' : undefined}
           onClick={handleChangePage}
         >
           {page}
         </a>
       ))}
 
-      <a href={buildPageUrl(currentPage + 1)} style={styleNextButton} onClick={handleNextClick}>
+      <a
+        href={buildPageUrl(currentPage + 1)}
+        style={styleNextButton}
+        onClick={handleNextClick}
+        aria-label="Página siguiente"
+        title="Página siguiente"
+      >
         <svg
+          aria-hidden="true"
           width="16"
           height="16"
           viewBox="0 0 24 24"

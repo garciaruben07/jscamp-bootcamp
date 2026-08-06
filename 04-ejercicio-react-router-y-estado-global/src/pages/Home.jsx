@@ -18,7 +18,7 @@ export function HomePage () {
   return (
     <main>
       <section>
-        <img src="./background.webp" width="200" />
+        <img src="/background.webp" alt="" width="200" />
 
         <h1>Encuentra el trabajo de tus sueños</h1>
 
@@ -37,7 +37,7 @@ export function HomePage () {
             <input
               name="search"
               required
-              type="text"
+              type="search"
               placeholder="Buscar empleos por título, habilidad o empresa"
             />
 
