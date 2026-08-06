@@ -1,36 +1,37 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router'
 
+import { JobListings } from '../components/JobListings.jsx'
 import { Pagination } from '../components/Pagination.jsx'
 import { SearchFormSection } from '../components/SearchFormSection.jsx'
-import { JobListings } from '../components/JobListings.jsx'
-import { useRouter } from '../hooks/useRouter.jsx'
 
 const RESULTS_PER_PAGE = 4
 
+/* Escribe el parámetro si tiene valor y lo borra si está vacío, para no ensuciar la URL */
+/* Excelente! Cambie el nombre de la función por convención de React. Todo lo que empieza por `set` se entiende que es el setter de un estado (segundo parámetro del useState, por lo tanto, que hace una actualización del componente). */
+function handleSetParam(params, key, value) {
+  if (value) {
+    params.set(key, value)
+  } else {
+    params.delete(key)
+  }
+}
+
 const useFilters = () => {
-  const [filters, setFilters] = useState(() => {
-    const params = new URLSearchParams(window.location.search)
-    return {
-      technology: params.get('technology') || '',
-      location: params.get('type') || '',
-      experienceLevel: params.get('level') || ''
-    }
-  })
-  const [textToFilter, setTextToFilter] = useState(() => {
-    const params = new URLSearchParams(window.location.search)
-    return params.get('text') || ''
-  })
-  const [currentPage, setCurrentPage] = useState(() => {
-    const params = new URLSearchParams(window.location.search)
-    const page = Number(params.get('page'))
-    return Number.isNaN(page) ? page : 1
-  })
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  /* La URL es la única fuente de verdad: los filtros se derivan de ella en cada render */
+  const textToFilter = searchParams.get('text') || ''
+  const technology = searchParams.get('technology') || ''
+  const location = searchParams.get('type') || ''
+  const experienceLevel = searchParams.get('level') || ''
+
+  const page = Number(searchParams.get('page'))
+  const currentPage = Number.isNaN(page) || page < 1 ? 1 : page
 
   const [jobs, setJobs] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
-
-  const { navigateTo } = useRouter()
 
   useEffect(() => {
     async function fetchJobs() {
@@ -39,17 +40,15 @@ const useFilters = () => {
 
         const params = new URLSearchParams()
         if (textToFilter) params.append('text', textToFilter)
-        if (filters.technology) params.append('technology', filters.technology)
-        if (filters.location) params.append('type', filters.location)
-        if (filters.experienceLevel) params.append('level', filters.experienceLevel)
+        if (technology) params.append('technology', technology)
+        if (location) params.append('type', location)
+        if (experienceLevel) params.append('level', experienceLevel)
 
         const offset = (currentPage - 1) * RESULTS_PER_PAGE
         params.append('limit', RESULTS_PER_PAGE)
         params.append('offset', offset)
 
-        const queryParams = params.toString()
-      
-        const response = await fetch(`https://jscamp-api.vercel.app/api/jobs?${queryParams}`)
+        const response = await fetch(`https://jscamp-api.vercel.app/api/jobs?${params.toString()}`)
         const json = await response.json()
 
         setJobs(json.data)
@@ -62,39 +61,44 @@ const useFilters = () => {
     }
 
     fetchJobs()
-  }, [filters, currentPage, textToFilter])
-
-  useEffect(() => {
-    const params = new URLSearchParams()
-
-    if (textToFilter) params.append('text', textToFilter)
-    if (filters.technology) params.append('technology', filters.technology)
-    if (filters.location) params.append('type', filters.location)
-    if (filters.experienceLevel) params.append('level', filters.experienceLevel)
-
-    if (currentPage > 1) params.append('page', currentPage)
-
-    const newUrl = params.toString()
-      ? `${window.location.pathname}?${params.toString()}`
-      : window.location.pathname
-
-    navigateTo(newUrl)
-  }, [filters, currentPage, textToFilter, navigateTo])
+  }, [textToFilter, technology, location, experienceLevel, currentPage])
 
   const totalPages = Math.ceil(total / RESULTS_PER_PAGE)
 
+  /* Cambiar de página crea entrada de historial (push): atrás vuelve a la página anterior */
   const handlePageChange = (page) => {
-    setCurrentPage(page)
+    setSearchParams((params) => {
+      const next = new URLSearchParams(params)
+      handleSetParam(next, 'page', page > 1 ? page : '')
+      return next
+    })
   }
 
+  /* Ajustar filtros reescribe la entrada actual (replace): atrás no repasa cada ajuste */
   const handleSearch = (filters) => {
-    setFilters(filters)
-    setCurrentPage(1)
+    setSearchParams(
+      (params) => {
+        const next = new URLSearchParams(params)
+        handleSetParam(next, 'technology', filters.technology)
+        handleSetParam(next, 'type', filters.location)
+        handleSetParam(next, 'level', filters.experienceLevel)
+        next.delete('page')
+        return next
+      },
+      { replace: true }
+    )
   }
 
   const handleTextFilter = (newTextToFilter) => {
-    setTextToFilter(newTextToFilter)
-    setCurrentPage(1)
+    setSearchParams(
+      (params) => {
+        const next = new URLSearchParams(params)
+        handleSetParam(next, 'text', newTextToFilter)
+        next.delete('page')
+        return next
+      },
+      { replace: true }
+    )
   }
 
   return {
@@ -104,9 +108,10 @@ const useFilters = () => {
     totalPages,
     currentPage,
     textToFilter,
+    filters: { technology, location, experienceLevel },
     handlePageChange,
     handleSearch,
-    handleTextFilter
+    handleTextFilter,
   }
 }
 
@@ -118,9 +123,10 @@ export function SearchPage() {
     totalPages,
     currentPage,
     textToFilter,
+    filters,
     handlePageChange,
     handleSearch,
-    handleTextFilter
+    handleTextFilter,
   } = useFilters()
 
   const title = loading
@@ -134,6 +140,7 @@ export function SearchPage() {
 
       <SearchFormSection
         initialText={textToFilter}
+        initialFilters={filters}
         onSearch={handleSearch}
         onTextFilter={handleTextFilter}
       />
