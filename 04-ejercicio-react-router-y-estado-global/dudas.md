@@ -18,6 +18,8 @@ había en la URL al recargar, así que les he puesto defaultValue.
 
 Si eran errores a propósito para que los encontráramos, avisadme y los dejo como estaban.
 
+**Respuesta:** Lo hiciste genial! Muy bien hecho los cambios.
+
 ## Cuarta parte
 
 <!-- Dudas de la cuarta parte del ejercicio -->
@@ -27,6 +29,10 @@ Si eran errores a propósito para que los encontráramos, avisadme y los dejo co
 En el header había un enlace "Sin SPA" que recargaba la página entera. Entiendo que estaba para ver
 la diferencia con el Link, y como el enunciado pedía poner los links principales con NavLink lo he
 quitado y he dejado Inicio y Empleos. ¿Hice bien o lo queríais mantener?
+
+**Respuesta:** 
+
+Hola! Está muy bien! Lo hiciste genial.
 
 ## Sexta parte
 
