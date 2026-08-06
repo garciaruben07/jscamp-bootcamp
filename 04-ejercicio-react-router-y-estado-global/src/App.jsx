@@ -1,8 +1,8 @@
 import { lazy, Suspense } from 'react'
-import { Routes, Route } from 'react-router'
+import { Route, Routes } from 'react-router'
 
-import { Header } from './components/Header.jsx'
 import { Footer } from './components/Footer.jsx'
+import { Header } from './components/Header.jsx'
 
 /* lazy espera un export default: adaptamos el export nombrado de cada página */
 const HomePage = lazy(() =>
@@ -23,11 +23,7 @@ function App() {
     <>
       <Header />
       <Suspense
-        fallback={
-          <main>
-            <p>Cargando página...</p>
-          </main>
-        }
+        fallback={<ViewAppFallback />}
       >
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -39,6 +35,13 @@ function App() {
       <Footer />
     </>
   )
+}
+
+/* Podemos crear un componente chico para no ocupar el fallback en la Prop de Suspense. Así queda mas limpio (y nos permite hacer un fallback más grande sin que se vea grande el componente App) */
+const ViewAppFallback = () => {
+  return <main>
+    <p>Cargando página...</p>
+  </main>
 }
 
 export default App
