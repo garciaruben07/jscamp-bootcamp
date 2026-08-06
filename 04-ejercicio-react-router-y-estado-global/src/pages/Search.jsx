@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
+import { JobListings } from '../components/JobListings.jsx'
 import { Pagination } from '../components/Pagination.jsx'
 import { SearchFormSection } from '../components/SearchFormSection.jsx'
-import { JobListings } from '../components/JobListings.jsx'
 
 const RESULTS_PER_PAGE = 4
 
 /* Escribe el parámetro si tiene valor y lo borra si está vacío, para no ensuciar la URL */
-function setParam(params, key, value) {
+/* Excelente! Cambie el nombre de la función por convención de React. Todo lo que empieza por `set` se entiende que es el setter de un estado (segundo parámetro del useState, por lo tanto, que hace una actualización del componente). */
+function handleSetParam(params, key, value) {
   if (value) {
     params.set(key, value)
   } else {
@@ -68,7 +69,7 @@ const useFilters = () => {
   const handlePageChange = (page) => {
     setSearchParams((params) => {
       const next = new URLSearchParams(params)
-      setParam(next, 'page', page > 1 ? page : '')
+      handleSetParam(next, 'page', page > 1 ? page : '')
       return next
     })
   }
@@ -78,9 +79,9 @@ const useFilters = () => {
     setSearchParams(
       (params) => {
         const next = new URLSearchParams(params)
-        setParam(next, 'technology', filters.technology)
-        setParam(next, 'type', filters.location)
-        setParam(next, 'level', filters.experienceLevel)
+        handleSetParam(next, 'technology', filters.technology)
+        handleSetParam(next, 'type', filters.location)
+        handleSetParam(next, 'level', filters.experienceLevel)
         next.delete('page')
         return next
       },
@@ -92,7 +93,7 @@ const useFilters = () => {
     setSearchParams(
       (params) => {
         const next = new URLSearchParams(params)
-        setParam(next, 'text', newTextToFilter)
+        handleSetParam(next, 'text', newTextToFilter)
         next.delete('page')
         return next
       },
