@@ -1,6 +1,9 @@
+import { useSearchParams } from 'react-router'
+import { Link } from './Link'
 import styles from './Pagination.module.css'
 
 export function Pagination({ currentPage = 1, totalPages = 10, onPageChange }) {
+  const [searchParams] = useSearchParams()
   // generar un array de páginas a mostrar
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
 
@@ -34,14 +37,13 @@ export function Pagination({ currentPage = 1, totalPages = 10, onPageChange }) {
   }
 
   const buildPageUrl = (page) => {
-    const url = new URL(window.location)
-    url.searchParams.set('page', page)
-    return `${url.pathname}?${url.searchParams.toString()}`
+    return `${searchParams.toString()}?page=${page}`
   }
 
   return (
     <nav className={styles.pagination} aria-label="Paginación de los resultados">
-      <a
+      {/* Cambiamos los `a` por Link */}
+      <Link
         href={buildPageUrl(currentPage - 1)}
         style={stylePrevButton}
         onClick={handlePrevClick}
@@ -62,10 +64,10 @@ export function Pagination({ currentPage = 1, totalPages = 10, onPageChange }) {
           <path stroke="none" d="M0 0h24v24H0z" fill="none" />
           <path d="M15 6l-6 6l6 6" />
         </svg>
-      </a>
+      </Link>
 
       {pages.map((page) => (
-        <a
+        <Link
           key={page}
           data-page={page}
           href={buildPageUrl(page)}
@@ -74,10 +76,10 @@ export function Pagination({ currentPage = 1, totalPages = 10, onPageChange }) {
           onClick={handleChangePage}
         >
           {page}
-        </a>
+        </Link>
       ))}
 
-      <a
+      <Link
         href={buildPageUrl(currentPage + 1)}
         style={styleNextButton}
         onClick={handleNextClick}
@@ -99,7 +101,7 @@ export function Pagination({ currentPage = 1, totalPages = 10, onPageChange }) {
           <path stroke="none" d="M0 0h24v24H0z" fill="none" />
           <path d="M9 6l6 6l-6 6" />
         </svg>
-      </a>
+      </Link>
     </nav>
   )
 }
