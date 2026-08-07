@@ -1,10 +1,16 @@
-import { createServer } from 'node:http'
 import { randomUUID } from 'node:crypto'
+import { createServer } from 'node:http'
 import { json } from 'node:stream/consumers'
 
-process.loadEnvFile()
+// Agregamos el puerto por default
+let port = 3000
 
-const port = process.env.PORT || 3000
+// En caso de que tengamos un .env, cambiamos el puerto.
+try {
+  process.loadEnvFile()
+  port = process.env.PORT ?? port
+} catch {}
+
 
 /* Toda la API responde JSON, así que centralizamos cabecera, estado y serialización */
 function enviarJson(res, statusCode, datos) {
@@ -14,13 +20,20 @@ function enviarJson(res, statusCode, datos) {
 
 /* Devuelve null si el parámetro no viene o no es un número usable, para poder ignorarlo */
 function leerNumero(searchParams, clave) {
-  const valor = searchParams.get(clave)
+  // Muy bien validado, pero hay algunos casos que se escapan, por ejemplo si el número es negativo, si es un decimal o si es Infinity. Te voy a mostrar una alternativa más simple que evalúa todo eso.
+  const number = Number(searchParams.get(clave))
+
+  // Number.isInteger() ya filtra si es NaN, Infinity, -Infinity y decimal. Y luego verificamos que sea mayor a 0
+  const isValid = Number.isInteger(number) && number >= 0
+  return isValid ? number : null
+
+  /* const valor = searchParams.get(clave)
 
   if (valor === null || valor.trim() === '') return null
 
   const numero = Number(valor)
 
-  return Number.isNaN(numero) ? null : numero
+  return Number.isNaN(numero) ? null : numero */
 }
 
 /* Cada filtro se aplica solo si viene su parámetro, así se pueden combinar entre ellos */
