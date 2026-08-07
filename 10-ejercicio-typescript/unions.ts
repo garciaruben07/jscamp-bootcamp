@@ -7,11 +7,15 @@ Tendrás que tipar la función safeSearch y displaySearchResults, verificando qu
 */
 
 import { searchJobs } from './functions.ts'
+import type { Job } from './objects.ts'
 
-export type SearchResult = any
+/* Union discriminada: el valor de success determina qué otras propiedades existen */
+export type SearchResult =
+  | { success: true; jobs: Job[]; count: number }
+  | { success: false; error: string }
 
 // Función que devuelve SearchResult
-export function safeSearch(jobs: any[], searchTerm: any): SearchResult {
+export function safeSearch(jobs: Job[], searchTerm: string): SearchResult {
   if (!searchTerm || searchTerm.trim().length === 0) {
     return {
       success: false,
@@ -30,9 +34,11 @@ export function safeSearch(jobs: any[], searchTerm: any): SearchResult {
 
 // Función para mostrar resultados usando type narrowing
 export function displaySearchResults(result: SearchResult): void {
-  if (result.succes) {
+  /* Decía result.succes, sin la segunda s: siempre era undefined y por tanto
+     siempre entraba por el else, mostrando un error que no existía */
+  if (result.success) {
     console.log(`Encontrados ${result.count} empleos:`)
-    result.jobs.forEach((job: any) => {
+    result.jobs.forEach((job) => {
       console.log(`- ${job.title} en ${job.company}`)
     })
   } else {
