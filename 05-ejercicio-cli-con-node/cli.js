@@ -29,14 +29,15 @@ function formatearTamano(bytes) {
 function avisarSinPermiso(directorio) {
   console.error(`No tienes permiso de lectura sobre "${directorio}".`)
   console.error('Vuelve a ejecutarlo dando acceso a esa ruta:')
-  console.error(`  node --permission --allow-fs-read=. --allow-fs-read=${directorio} cli.js ${directorio}`)
+  console.error(`  node --permission --allow-fs-read=${directorio} --allow-fs-read=${directorio} cli.js ${directorio}`)
 }
 
 /* process.permission solo existe si Node arrancó con --permission */
 function comprobarPermisos(directorio) {
-  if (process.permission === undefined) return
+  /* Si ejecutamos node cli.js . -> se va a ejecutar el listado porque el return no bloquea el proceso */
+  // if (process.permission === undefined) return
 
-  if (!process.permission.has('fs.read', directorio)) {
+  if (!process.permission?.has('fs.read', directorio)) {
     avisarSinPermiso(directorio)
     process.exit(1)
   }
@@ -84,12 +85,21 @@ function mostrar(entradas) {
   /* La columna se ajusta al nombre más largo para que los tamaños queden alineados */
   const ancho = Math.max(ANCHO_MINIMO, ...entradas.map((entrada) => entrada.nombre.length))
 
+  // Lo que hiciste está genial, otra alternativa puede ser con table, te muestro un ejemplo para que veas como queda.
+  const listResults = []
   for (const entrada of entradas) {
     const icono = entrada.esDirectorio ? '📁' : '📄'
     const tamano = entrada.esDirectorio ? '-' : formatearTamano(entrada.tamano)
 
-    console.log(`${icono} ${entrada.nombre.padEnd(ancho)} ${tamano}`)
+    listResults.push({
+      tipo: icono,
+      nombre: entrada.nombre.padEnd(ancho),
+      'tamaño': tamano,
+    })
+
+    // console.log(`${icono} ${entrada.nombre.padEnd(ancho)} ${tamano}`)
   }
+  console.table(listResults)
 }
 
 comprobarPermisos(directorio)
