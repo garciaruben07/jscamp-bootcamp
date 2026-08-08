@@ -30,3 +30,18 @@ usuarios con campos `undefined` que luego rompían el filtro por nombre. ¿Era n
 esperabais solo el camino feliz?
 
 **Respuesta:** Muy bien! Lo que hiciste ha estado genial.
+
+## El nuevo leerNumero deja el listado vacío
+
+Al probar la corrección vi que `GET /users` me devolvía `[]` siempre. Es por `Number(searchParams.get(clave))`:
+cuando el parámetro no viene, `get()` devuelve `null` y `Number(null)` es `0`, que pasa el
+`Number.isInteger() && >= 0`. Así que `maxAge` y `limit` valen 0 aunque no los mandes y no queda
+ningún usuario.
+
+He dejado la comprobación de que el parámetro venga antes de convertirlo, y después ya aplico el
+`Number.isInteger()` que me enseñaste, que efectivamente cubre los negativos y los decimales mucho
+mejor que mi `Number.isNaN()`.
+
+De paso he montado las rutas en un objeto para poder devolver el 405 del que hablábamos arriba.
+Cada ruta lista los métodos que acepta, así sé si lo que falla es la ruta (404) o el método (405),
+y aprovecho para mandar la cabecera `Allow`.
