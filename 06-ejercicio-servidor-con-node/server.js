@@ -20,20 +20,16 @@ function enviarJson(res, statusCode, datos) {
 
 /* Devuelve null si el parámetro no viene o no es un número usable, para poder ignorarlo */
 function leerNumero(searchParams, clave) {
-  // Muy bien validado, pero hay algunos casos que se escapan, por ejemplo si el número es negativo, si es un decimal o si es Infinity. Te voy a mostrar una alternativa más simple que evalúa todo eso.
-  const number = Number(searchParams.get(clave))
+  const valor = searchParams.get(clave)
 
-  // Number.isInteger() ya filtra si es NaN, Infinity, -Infinity y decimal. Y luego verificamos que sea mayor a 0
-  const isValid = Number.isInteger(number) && number >= 0
-  return isValid ? number : null
-
-  /* const valor = searchParams.get(clave)
-
+  /* Sin esta guarda el parámetro ausente entra como Number(null), que es 0 y pasa
+     la validación: maxAge=0 y limit=0 dejarían la lista vacía siempre */
   if (valor === null || valor.trim() === '') return null
 
   const numero = Number(valor)
 
-  return Number.isNaN(numero) ? null : numero */
+  /* Number.isInteger descarta NaN, Infinity y decimales; el >= 0 descarta los negativos */
+  return Number.isInteger(numero) && numero >= 0 ? numero : null
 }
 
 /* Cada filtro se aplica solo si viene su parámetro, así se pueden combinar entre ellos */
