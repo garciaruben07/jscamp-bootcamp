@@ -11,7 +11,6 @@ try {
   port = process.env.PORT ?? port
 } catch {}
 
-
 /* Toda la API responde JSON, así que centralizamos cabecera, estado y serialización */
 function enviarJson(res, statusCode, datos) {
   res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' })
@@ -70,47 +69,68 @@ function paginarUsuarios(users, searchParams) {
   return users.slice(desde, hasta)
 }
 
+function listarUsuarios(req, res, searchParams) {
+  const filtrados = filtrarUsuarios(users, searchParams)
+
+  return enviarJson(res, 200, paginarUsuarios(filtrados, searchParams))
+}
+
+async function crearUsuario(req, res) {
+  let body
+
+  try {
+    body = await json(req)
+  } catch {
+    return enviarJson(res, 400, { error: 'El cuerpo de la petición no es un JSON válido' })
+  }
+
+  const { name, age } = body ?? {}
+
+  if (typeof name !== 'string' || name.trim() === '') {
+    return enviarJson(res, 400, { error: 'El campo name es obligatorio y debe ser texto' })
+  }
+
+  if (typeof age !== 'number' || !Number.isInteger(age) || age < 0) {
+    return enviarJson(res, 400, { error: 'El campo age es obligatorio y debe ser un entero positivo' })
+  }
+
+  const nuevoUsuario = { id: randomUUID(), name: name.trim(), age }
+  users.push(nuevoUsuario)
+
+  return enviarJson(res, 201, nuevoUsuario)
+}
+
+function comprobarSalud(req, res) {
+  return enviarJson(res, 200, { status: 'ok', uptime: process.uptime() })
+}
+
+/* Cada ruta agrupa los métodos que acepta: así se puede distinguir una ruta que no
+   existe (404) de una que sí existe pero no admite ese método (405) */
+const rutas = {
+  '/users': { GET: listarUsuarios, POST: crearUsuario },
+  '/health': { GET: comprobarSalud },
+}
+
 const server = createServer(async (req, res) => {
   /* req.url llega sin origen, así que hace falta una base para poder parsearlo */
   const { pathname, searchParams } = new URL(req.url, `http://${req.headers.host}`)
 
-  if (req.method === 'GET' && pathname === '/users') {
-    const filtrados = filtrarUsuarios(users, searchParams)
+  const metodos = rutas[pathname]
 
-    return enviarJson(res, 200, paginarUsuarios(filtrados, searchParams))
+  if (metodos === undefined) {
+    return enviarJson(res, 404, { error: 'Ruta no encontrada' })
   }
 
-  if (req.method === 'POST' && pathname === '/users') {
-    let body
+  const manejador = metodos[req.method]
 
-    try {
-      body = await json(req)
-    } catch {
-      return enviarJson(res, 400, { error: 'El cuerpo de la petición no es un JSON válido' })
-    }
+  if (manejador === undefined) {
+    /* La respuesta 405 obliga a indicar qué métodos sí acepta la ruta */
+    res.setHeader('Allow', Object.keys(metodos).join(', '))
 
-    const { name, age } = body ?? {}
-
-    if (typeof name !== 'string' || name.trim() === '') {
-      return enviarJson(res, 400, { error: 'El campo name es obligatorio y debe ser texto' })
-    }
-
-    if (typeof age !== 'number' || !Number.isInteger(age) || age < 0) {
-      return enviarJson(res, 400, { error: 'El campo age es obligatorio y debe ser un entero positivo' })
-    }
-
-    const nuevoUsuario = { id: randomUUID(), name: name.trim(), age }
-    users.push(nuevoUsuario)
-
-    return enviarJson(res, 201, nuevoUsuario)
+    return enviarJson(res, 405, { error: `El método ${req.method} no está permitido en ${pathname}` })
   }
 
-  if (req.method === 'GET' && pathname === '/health') {
-    return enviarJson(res, 200, { status: 'ok', uptime: process.uptime() })
-  }
-
-  /* Si ninguna ruta ha respondido, no existe */
-  return enviarJson(res, 404, { error: 'Ruta no encontrada' })
+  return manejador(req, res, searchParams)
 })
 
 server.listen(port, () => {
