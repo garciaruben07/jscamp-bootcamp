@@ -1,5 +1,5 @@
 // @ts-check
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 const BASE_URL = 'http://localhost:5173'
 
@@ -28,7 +28,8 @@ test.describe('Búsqueda de empleos', () => {
     /* La búsqueda viaja en la URL, así que la propia navegación ya es una comprobación */
     await expect(page).toHaveURL(/\/search\?.*text=React/)
 
-    const resultados = page.locator('article')
+    // Podemos usar un getByRole
+    const resultados = page.getByRole('article')
 
     await expect(resultados.first()).toBeVisible()
     expect(await resultados.count()).toBeGreaterThan(0)
@@ -42,11 +43,15 @@ test.describe('Flujo completo de aplicación', () => {
     await page.getByRole('searchbox').fill('JavaScript')
     await page.getByRole('button', { name: 'Buscar' }).click()
 
-    const primerResultado = page.locator('article h3 a').first()
-    await expect(primerResultado).toBeVisible()
+    // Evitemos usar `locator`
+    const firstResult = page.getByRole('article').first()
+    
+    const firstTitleLinkResult = firstResult.getByRole('heading', { level: 3 }).getByRole('link')
+    // const primerResultado = page.locator('article h3 a').first()
+    await expect(firstTitleLinkResult).toBeVisible()
 
-    const titulo = await primerResultado.textContent()
-    await primerResultado.click()
+    const titulo = await firstTitleLinkResult.textContent()
+    await firstTitleLinkResult.click()
 
     /* Esperamos a la URL del detalle: si no, los botones del listado siguen en pantalla */
     await expect(page).toHaveURL(/\/job\//)
@@ -69,10 +74,10 @@ test.describe('Filtros', () => {
     await page.locator('#filter-location').selectOption('remoto')
 
     await expect(page).toHaveURL(/type=remoto/)
-    await expect(page.locator('article').first()).toBeVisible()
+    await expect(page.getByRole('article').first()).toBeVisible()
 
     /* Cada tarjeta guarda su modalidad en un data attribute */
-    const modalidades = await page.locator('article').evaluateAll((articles) =>
+    const modalidades = await page.getByRole('article').evaluateAll((articles) =>
       articles.map((article) => article.getAttribute('data-modalidad'))
     )
 
@@ -86,9 +91,9 @@ test.describe('Filtros', () => {
     await page.locator('#filter-experience-level').selectOption('senior')
 
     await expect(page).toHaveURL(/level=senior/)
-    await expect(page.locator('article').first()).toBeVisible()
+    await expect(page.getByRole('article').first()).toBeVisible()
 
-    const niveles = await page.locator('article').evaluateAll((articles) =>
+    const niveles = await page.getByRole('article').evaluateAll((articles) =>
       articles.map((article) => article.getAttribute('data-nivel'))
     )
 
@@ -129,6 +134,7 @@ test.describe('Detalle de empleo', () => {
   test('muestra el detalle del empleo al pulsar en un resultado', async ({ page }) => {
     await irABusqueda(page)
 
+    // Aquí podemos aplicar lo mismo que en los tests anteriores, obtener el primer article por getByRole, y luego acceder al link dentro por role también
     const primerResultado = page.locator('article h3 a').first()
     const titulo = await primerResultado.textContent()
 
