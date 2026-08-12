@@ -1,0 +1,46 @@
+name: 04 - Events
+
+on:
+  issues:
+    types: [opened, assigned]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  inspect-event:
+    name: Inspeccionar el evento
+    runs-on: ubuntu-24.04
+    # Los permisos se declaran en el job y no en el workflow para que el token de
+    # escritura solo exista donde hace falta
+    permissions:
+      issues: write
+    steps:
+      # El cuerpo del comentario lo escribe cualquiera que pase por el repositorio, así
+      # que no se interpola dentro del `run`: entra por `env` y se lee como variable
+      - name: Mostrar los datos del evento
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        run: |
+          echo "Evento:      $EVENT_NAME"
+          echo "Acción:      $EVENT_ACTION"
+          echo "Issue:       ${ISSUE_NUMBER:-(el evento no trae issue)}"
+          echo "Comentario:  ${COMMENT_BODY:-(el evento no trae comentario)}"
+
+      # Solo al abrir la issue: sin filtrar por `action`, reasignarla volvería a comentar,
+      # y el comentario del bot dispara `issue_comment` otra vez
+      - name: Agradecer el aporte
+        if: github.event_name == 'issues' && github.event.action == 'opened'
+        env:
+          # gh lee el token y el repositorio del entorno. GITHUB_TOKEN es el token
+          # efímero del propio run, por eso el comentario aparece firmado por el bot
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --body "Gracias por abrir esta issue, @${ISSUE_AUTHOR}. La revisaremos en cuanto podamos."

@@ -1,0 +1,40 @@
+name: 01 - Hello
+
+# workflow_dispatch es el único evento que habilita el botón "Run workflow" en la
+# pestaña Actions. Para que aparezca, el workflow tiene que existir en la rama por defecto
+on:
+  workflow_dispatch:
+
+# Ningún job necesita escribir en el repositorio, así que el token va en solo lectura
+permissions:
+  contents: read
+
+jobs:
+  # Los dos jobs corren en paralelo: ninguno declara `needs`, así que GitHub los
+  # arranca a la vez en dos runners distintos
+  saludar:
+    name: Saludar
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Saludar
+        run: echo "Hola desde GitHub Actions!"
+
+      - name: Mostrar la fecha
+        run: date
+
+      # Sin checkout, el workspace del runner está vacío: este `ls -la` no lista el
+      # repositorio, solo el directorio de trabajo que GitHub crea para el job
+      - name: Listar los archivos
+        run: ls -la
+
+  repo-files:
+    name: Archivos del repositorio
+    runs-on: ubuntu-24.04
+    steps:
+      # El runner arranca limpio, sin el código del repositorio. checkout es quien lo
+      # clona en el workspace: por eso el job anterior no ve ningún archivo y este sí
+      - name: Descargar el código
+        uses: actions/checkout@v6
+
+      - name: Listar los archivos
+        run: ls -la
