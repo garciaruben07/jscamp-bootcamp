@@ -1,5 +1,5 @@
-import { test, describe, before, after } from 'node:test'
 import assert from 'node:assert'
+import { after, before, describe, test } from 'node:test'
 import app from './app.js'
 
 const PORT = 5678
@@ -38,51 +38,71 @@ after(async () => {
   server.close()
 })
 
+/* Cuando hay partes del test que se repiten mucho, podemos hacer una función que agrupe */
+const handleGetAndCheckStatus = async (path = '/jobs', status = 200) => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}` // Así permitimos al dev pasar el path como quiera
+
+  const response = await fetch(`${BASE_URL}${normalizedPath}`)
+  const json = await response.json()
+
+  assert.strictEqual(response.status, status)
+
+  return json
+} 
+
 describe('GET /jobs', () => {
   test('Debe responder con 200 y un array de trabajos', async () => {
-    const response = await fetch(`${BASE_URL}/jobs`)
-    const json = await response.json()
-
-    assert.strictEqual(response.status, 200)
+    const json = await handleGetAndCheckStatus('/jobs')
     assert.ok(Array.isArray(json.data))
   })
 
   test('Debe filtrar trabajos por tecnología', async () => {
-    const response = await fetch(`${BASE_URL}/jobs?technology=react`)
-    const json = await response.json()
+    const TECHNOLOGY = 'react'
+    const json = await handleGetAndCheckStatus(`/jobs?technology=${TECHNOLOGY}`)
 
-    assert.strictEqual(response.status, 200)
     assert.ok(json.data.length > 0, 'debería devolver al menos un trabajo con react')
     assert.ok(json.data.every((job) => job.data.technology.includes('react')))
   })
 
   test('Debe respetar el límite de resultados', async () => {
-    const response = await fetch(`${BASE_URL}/jobs?limit=2`)
-    const json = await response.json()
+    const LIMIT = 2
+    const json = await handleGetAndCheckStatus(`/jobs?limit=${LIMIT}`)
 
     assert.strictEqual(json.limit, 2)
     assert.strictEqual(json.data.length, 2)
   })
 
   test('Debe aplicar offset correctamente', async () => {
-    const response = await fetch(`${BASE_URL}/jobs?offset=1`)
-    const json = await response.json()
+    const OFFSET = 1
+    const json = await handleGetAndCheckStatus(`/jobs?offset=${OFFSET}`)
 
     assert.strictEqual(json.offset, 1)
     assert.strictEqual(json.data[0].id, ID_EXISTENTE)
   })
 })
 
+// Podemos hacer lo mismo para POST
+const handlePostAndCheckStatus = async (path = '/jobs', {
+  status = 201,
+  body = JOB_VALIDO,
+}) => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+
+  const response = await fetch(`${BASE_URL}${normalizedPath}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+  assert.strictEqual(response.status, status)
+
+  return response.json()
+}
+
 describe('POST /jobs', () => {
   test('El nuevo trabajo se añade correctamente con buen formato', async () => {
-    const response = await fetch(`${BASE_URL}/jobs`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(JOB_VALIDO),
-    })
-    const json = await response.json()
+    const json = await handlePostAndCheckStatus('/jobs', { body: JOB_VALIDO })
 
-    assert.strictEqual(response.status, 201)
     assert.ok(json.id, 'el trabajo creado debe traer un id generado')
     assert.strictEqual(json.titulo, JOB_VALIDO.titulo)
     assert.strictEqual(json.empresa, JOB_VALIDO.empresa)
@@ -90,23 +110,17 @@ describe('POST /jobs', () => {
   })
 
   test('Debe rechazar un título de menos de 3 caracteres', async () => {
-    const response = await fetch(`${BASE_URL}/jobs`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...JOB_VALIDO, titulo: 'ab' }),
+    await handlePostAndCheckStatus('/jobs', {
+      body: { ...JOB_VALIDO, titulo: 'ab' },
+      status: 400,
     })
-
-    assert.strictEqual(response.status, 400)
   })
 
   test('Debe rechazar un título de más de 100 caracteres', async () => {
-    const response = await fetch(`${BASE_URL}/jobs`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...JOB_VALIDO, titulo: 'a'.repeat(101) }),
+    await handlePostAndCheckStatus('/jobs', {
+      body: { ...JOB_VALIDO, titulo: 'a'.repeat(101) },
+      status: 400,
     })
-
-    assert.strictEqual(response.status, 400)
   })
 
   test('Debe rechazar una petición sin título', async () => {
