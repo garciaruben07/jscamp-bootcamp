@@ -10,13 +10,9 @@ function aEntero(valor, porDefecto) {
   return Number.isInteger(numero) && numero >= 0 ? numero : porDefecto
 }
 
-// Excelente idea! Algo que podemos hacer para llevarlo a otro nivel es hacer que esta lista sea inmutable.
-// Por que? Para estar seguros de que la fuente de la verdad es esta lista, y que no debe ser modificada en ninguna parte del código.
-// Con esto evitamos que, por distracción o error, agreguemos un campo a la lista que no querramos.
-// Usamos `Object.freeze` para que no se puedan modificar las propiedades de la lista.
-// Si intentas modificarla con un push, pop, etc, obtendrás un error.
+/* Congelada para que sea la única fuente de verdad de los campos: al ser un módulo ES,
+   que está en modo estricto, cualquier push o reasignación lanza un error en vez de colarse */
 const CAMPOS = Object.freeze(['titulo', 'empresa', 'ubicacion', 'descripcion', 'data', 'content'])
-// const CAMPOS = ['titulo', 'empresa', 'ubicacion', 'descripcion', 'data', 'content']
 
 /* Devuelve la lista de campos que faltan o vienen vacíos, para poder decir cuáles fallan */
 function camposInvalidos(body) {
