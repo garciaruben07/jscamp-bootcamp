@@ -2,7 +2,6 @@ import { readdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 
 const UNIDADES = ['B', 'KB', 'MB', 'GB', 'TB']
-const ANCHO_MINIMO = 24
 
 /* Los argumentos del usuario empiezan en la posición 2: antes van node y el propio script */
 const args = process.argv.slice(2)
@@ -29,15 +28,17 @@ function formatearTamano(bytes) {
 function avisarSinPermiso(directorio) {
   console.error(`No tienes permiso de lectura sobre "${directorio}".`)
   console.error('Vuelve a ejecutarlo dando acceso a esa ruta:')
-  console.error(`  node --permission --allow-fs-read=${directorio} --allow-fs-read=${directorio} cli.js ${directorio}`)
+  /* El primer permiso es para el propio cli.js: sin él Node ni siquiera puede cargar el script */
+  console.error(`  node --permission --allow-fs-read=. --allow-fs-read=${directorio} cli.js ${directorio}`)
 }
 
-/* process.permission solo existe si Node arrancó con --permission */
+/* process.permission solo existe si Node arrancó con --permission. Sin ese flag no hay
+   restricciones que comprobar, así que el listado debe funcionar con normalidad: es como
+   se ejecuta el CLI en los tres primeros ejercicios */
 function comprobarPermisos(directorio) {
-  /* Si ejecutamos node cli.js . -> se va a ejecutar el listado porque el return no bloquea el proceso */
-  // if (process.permission === undefined) return
+  if (process.permission === undefined) return
 
-  if (!process.permission?.has('fs.read', directorio)) {
+  if (!process.permission.has('fs.read', directorio)) {
     avisarSinPermiso(directorio)
     process.exit(1)
   }
@@ -82,23 +83,13 @@ function mostrar(entradas) {
     return
   }
 
-  /* La columna se ajusta al nombre más largo para que los tamaños queden alineados */
-  const ancho = Math.max(ANCHO_MINIMO, ...entradas.map((entrada) => entrada.nombre.length))
+  /* console.table ya alinea las columnas por sí solo, así que aquí no hace falta padEnd */
+  const listResults = entradas.map((entrada) => ({
+    tipo: entrada.esDirectorio ? '📁' : '📄',
+    nombre: entrada.nombre,
+    tamaño: entrada.esDirectorio ? '-' : formatearTamano(entrada.tamano),
+  }))
 
-  // Lo que hiciste está genial, otra alternativa puede ser con table, te muestro un ejemplo para que veas como queda.
-  const listResults = []
-  for (const entrada of entradas) {
-    const icono = entrada.esDirectorio ? '📁' : '📄'
-    const tamano = entrada.esDirectorio ? '-' : formatearTamano(entrada.tamano)
-
-    listResults.push({
-      tipo: icono,
-      nombre: entrada.nombre.padEnd(ancho),
-      'tamaño': tamano,
-    })
-
-    // console.log(`${icono} ${entrada.nombre.padEnd(ancho)} ${tamano}`)
-  }
   console.table(listResults)
 }
 
