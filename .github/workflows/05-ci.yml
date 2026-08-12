@@ -1,0 +1,159 @@
+name: 05 - CI
+
+on:
+  push:
+    branches: [main]
+    # El repositorio guarda los doce ejercicios del bootcamp, pero este pipeline solo
+    # valida el monorepo del ejercicio 12. Sin este filtro, entregar cualquier otro
+    # ejercicio lanzaría siete jobs que no tienen nada que ver con lo que se ha tocado
+    paths:
+      - '12-ejercicio-cicd/**'
+      - '.github/workflows/05-ci.yml'
+      - '.github/actions/setup-pnpm-ci-cd/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - '12-ejercicio-cicd/**'
+      - '.github/workflows/05-ci.yml'
+      - '.github/actions/setup-pnpm-ci-cd/**'
+
+permissions:
+  contents: read
+
+# Si llegan dos pushes seguidos a la misma rama, el primero deja de importar en cuanto
+# existe el segundo: se cancela en vez de gastar runners validando código ya viejo
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ================================
+  # LINT Y TEST EN PARALELO
+  # ================================
+
+  # Los cuatro jobs siguientes no declaran `needs`, así que arrancan a la vez. Separar
+  # lint de test cuesta una instalación de dependencias más, pero a cambio un fallo de
+  # estilo y un test roto se ven en la misma ejecución en vez de uno detrás de otro
+  frontend-lint:
+    name: Frontend / lint
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v6
+
+      - name: Preparar Node y pnpm
+        uses: ./.github/actions/setup-pnpm-ci-cd
+
+      - name: Lint
+        working-directory: 12-ejercicio-cicd
+        run: pnpm lint:frontend
+
+  frontend-test:
+    name: Frontend / test
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v6
+
+      - name: Preparar Node y pnpm
+        uses: ./.github/actions/setup-pnpm-ci-cd
+
+      - name: Test
+        working-directory: 12-ejercicio-cicd
+        run: pnpm test:frontend
+
+  backend-lint:
+    name: Backend / lint
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v6
+
+      - name: Preparar Node y pnpm
+        uses: ./.github/actions/setup-pnpm-ci-cd
+
+      - name: Lint
+        working-directory: 12-ejercicio-cicd
+        run: pnpm lint:backend
+
+  backend-test:
+    name: Backend / test
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v6
+
+      - name: Preparar Node y pnpm
+        uses: ./.github/actions/setup-pnpm-ci-cd
+
+      - name: Test
+        working-directory: 12-ejercicio-cicd
+        run: pnpm test:backend
+
+  # ================================
+  # BUILD, SOLO SI LO ANTERIOR PASA
+  # ================================
+
+  # `needs` hace dos cosas a la vez: ordena la ejecución y actúa de puerta. Si el lint o
+  # el test fallan, el build no se ejecuta, se queda en "skipped"
+  frontend-build:
+    name: Frontend / build
+    runs-on: ubuntu-24.04
+    needs: [frontend-lint, frontend-test]
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v6
+
+      - name: Preparar Node y pnpm
+        uses: ./.github/actions/setup-pnpm-ci-cd
+
+      - name: Build
+        working-directory: 12-ejercicio-cicd
+        run: pnpm build:frontend
+
+  backend-build:
+    name: Backend / build
+    runs-on: ubuntu-24.04
+    needs: [backend-lint, backend-test]
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v6
+
+      - name: Preparar Node y pnpm
+        uses: ./.github/actions/setup-pnpm-ci-cd
+
+      - name: Build
+        working-directory: 12-ejercicio-cicd
+        run: pnpm build:backend
+
+  # ================================
+  # MATRIZ MULTIPLATAFORMA
+  # ================================
+
+  # Seis combinaciones de sistema operativo y versión de Node. No lleva `needs` y nadie
+  # depende de él, así que corre en paralelo con todo lo demás sin bloquear el pipeline
+  frontend-test-matrix:
+    name: Frontend / test (${{ matrix.os }}, Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # Sin esto, la primera combinación que falla cancela las otras cinco y no hay forma
+      # de saber si el fallo es de un sistema operativo concreto o de todos
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-latest, windows-latest]
+        node: ['22', '24']
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v6
+
+      - name: Preparar Node y pnpm
+        uses: ./.github/actions/setup-pnpm-ci-cd
+        with:
+          node-version: ${{ matrix.node }}
+          # Cada combinación tiene su propio store en una ruta distinta, así que cachear
+          # aquí llena la caché del repositorio de entradas que casi nunca se reutilizan
+          cache: 'false'
+
+      - name: Test
+        working-directory: 12-ejercicio-cicd
+        run: pnpm test:frontend
