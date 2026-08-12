@@ -1,5 +1,5 @@
-import { JobModel } from '../models/jobs.js'
 import { DEFAULTS } from '../config.js'
+import { JobModel } from '../models/jobs.js'
 
 /* Los query params llegan siempre como texto; si no son un entero válido se usa el valor por defecto */
 function aEntero(valor, porDefecto) {
@@ -10,7 +10,13 @@ function aEntero(valor, porDefecto) {
   return Number.isInteger(numero) && numero >= 0 ? numero : porDefecto
 }
 
-const CAMPOS = ['titulo', 'empresa', 'ubicacion', 'descripcion', 'data', 'content']
+// Excelente idea! Algo que podemos hacer para llevarlo a otro nivel es hacer que esta lista sea inmutable.
+// Por que? Para estar seguros de que la fuente de la verdad es esta lista, y que no debe ser modificada en ninguna parte del código.
+// Con esto evitamos que, por distracción o error, agreguemos un campo a la lista que no querramos.
+// Usamos `Object.freeze` para que no se puedan modificar las propiedades de la lista.
+// Si intentas modificarla con un push, pop, etc, obtendrás un error.
+const CAMPOS = Object.freeze(['titulo', 'empresa', 'ubicacion', 'descripcion', 'data', 'content'])
+// const CAMPOS = ['titulo', 'empresa', 'ubicacion', 'descripcion', 'data', 'content']
 
 /* Devuelve la lista de campos que faltan o vienen vacíos, para poder decir cuáles fallan */
 function camposInvalidos(body) {
