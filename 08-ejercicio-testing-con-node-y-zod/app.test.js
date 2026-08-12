@@ -19,15 +19,52 @@ const JOB_VALIDO = {
 
 let server
 
-/* Cada test que modifica datos trabaja sobre un job recién creado, para no depender del orden */
-async function crearJob(cambios = {}) {
-  const response = await fetch(`${BASE_URL}/jobs`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...JOB_VALIDO, ...cambios }),
-  })
+/* Cuando hay partes del test que se repiten mucho, podemos hacer una función que agrupe.
+   Esta es la base de todas: lanza la petición y comprueba el estado que se espera */
+const request = async (method, path, { status, body } = {}) => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}` // Así permitimos al dev pasar el path como quiera
+
+  const options = { method }
+
+  /* Solo los métodos que mandan datos necesitan cabecera y cuerpo */
+  if (body !== undefined) {
+    options.headers = { 'Content-Type': 'application/json' }
+    options.body = JSON.stringify(body)
+  }
+
+  const response = await fetch(`${BASE_URL}${normalizedPath}`, options)
+
+  assert.strictEqual(response.status, status)
+
+  return response
+}
+
+/* GET y POST siempre responden con un cuerpo, así que sus atajos devuelven el JSON ya parseado */
+const handleGetAndCheckStatus = async (path = '/jobs', status = 200) => {
+  const response = await request('GET', path, { status })
 
   return response.json()
+}
+
+const handlePostAndCheckStatus = async (path = '/jobs', { status = 201, body = JOB_VALIDO } = {}) => {
+  const response = await request('POST', path, { status, body })
+
+  return response.json()
+}
+
+/* PUT, PATCH y DELETE responden 204, que por definición no lleva cuerpo: llamar a .json()
+   aquí reventaría, así que estos atajos se quedan en comprobar el estado */
+const handlePutAndCheckStatus = (path, { status = 204, body = JOB_VALIDO } = {}) =>
+  request('PUT', path, { status, body })
+
+const handlePatchAndCheckStatus = (path, { status = 204, body = {} } = {}) =>
+  request('PATCH', path, { status, body })
+
+const handleDeleteAndCheckStatus = (path, { status = 204 } = {}) => request('DELETE', path, { status })
+
+/* Cada test que modifica datos trabaja sobre un job recién creado, para no depender del orden */
+async function crearJob(cambios = {}) {
+  return handlePostAndCheckStatus('/jobs', { body: { ...JOB_VALIDO, ...cambios } })
 }
 
 before(async () => {
@@ -37,18 +74,6 @@ before(async () => {
 after(async () => {
   server.close()
 })
-
-/* Cuando hay partes del test que se repiten mucho, podemos hacer una función que agrupe */
-const handleGetAndCheckStatus = async (path = '/jobs', status = 200) => {
-  const normalizedPath = path.startsWith('/') ? path : `/${path}` // Así permitimos al dev pasar el path como quiera
-
-  const response = await fetch(`${BASE_URL}${normalizedPath}`)
-  const json = await response.json()
-
-  assert.strictEqual(response.status, status)
-
-  return json
-} 
 
 describe('GET /jobs', () => {
   test('Debe responder con 200 y un array de trabajos', async () => {
@@ -68,36 +93,18 @@ describe('GET /jobs', () => {
     const LIMIT = 2
     const json = await handleGetAndCheckStatus(`/jobs?limit=${LIMIT}`)
 
-    assert.strictEqual(json.limit, 2)
-    assert.strictEqual(json.data.length, 2)
+    assert.strictEqual(json.limit, LIMIT)
+    assert.strictEqual(json.data.length, LIMIT)
   })
 
   test('Debe aplicar offset correctamente', async () => {
     const OFFSET = 1
     const json = await handleGetAndCheckStatus(`/jobs?offset=${OFFSET}`)
 
-    assert.strictEqual(json.offset, 1)
+    assert.strictEqual(json.offset, OFFSET)
     assert.strictEqual(json.data[0].id, ID_EXISTENTE)
   })
 })
-
-// Podemos hacer lo mismo para POST
-const handlePostAndCheckStatus = async (path = '/jobs', {
-  status = 201,
-  body = JOB_VALIDO,
-}) => {
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`
-
-  const response = await fetch(`${BASE_URL}${normalizedPath}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-
-  assert.strictEqual(response.status, status)
-
-  return response.json()
-}
 
 describe('POST /jobs', () => {
   test('El nuevo trabajo se añade correctamente con buen formato', async () => {
@@ -126,52 +133,33 @@ describe('POST /jobs', () => {
   test('Debe rechazar una petición sin título', async () => {
     const { titulo, ...sinTitulo } = JOB_VALIDO
 
-    const response = await fetch(`${BASE_URL}/jobs`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(sinTitulo),
-    })
-
-    assert.strictEqual(response.status, 400)
+    await handlePostAndCheckStatus('/jobs', { body: sinTitulo, status: 400 })
   })
 
   test('Debe rechazar un título que no sea texto', async () => {
-    const response = await fetch(`${BASE_URL}/jobs`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...JOB_VALIDO, titulo: 12345 }),
+    await handlePostAndCheckStatus('/jobs', {
+      body: { ...JOB_VALIDO, titulo: 12345 },
+      status: 400,
     })
-
-    assert.strictEqual(response.status, 400)
   })
 
   test('Debe aceptar una petición sin descripción, porque es opcional', async () => {
     const { descripcion, ...sinDescripcion } = JOB_VALIDO
 
-    const response = await fetch(`${BASE_URL}/jobs`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(sinDescripcion),
-    })
-
-    assert.strictEqual(response.status, 201)
+    await handlePostAndCheckStatus('/jobs', { body: sinDescripcion })
   })
 })
 
 describe('GET /jobs/:id', () => {
   test('Debe devolver el trabajo con el ID especificado', async () => {
-    const response = await fetch(`${BASE_URL}/jobs/${ID_EXISTENTE}`)
-    const json = await response.json()
+    const json = await handleGetAndCheckStatus(`/jobs/${ID_EXISTENTE}`)
 
-    assert.strictEqual(response.status, 200)
     assert.strictEqual(json.id, ID_EXISTENTE)
   })
 
   test('Debe enviar 404 cuando el ID no existe', async () => {
-    const response = await fetch(`${BASE_URL}/jobs/${ID_INEXISTENTE}`)
-    const json = await response.json()
+    const json = await handleGetAndCheckStatus(`/jobs/${ID_INEXISTENTE}`, 404)
 
-    assert.strictEqual(response.status, 404)
     assert.ok(json.error)
   })
 })
@@ -182,16 +170,9 @@ describe('PUT /jobs/:id', () => {
 
     const cambios = { ...JOB_VALIDO, titulo: 'Título reemplazado', ubicacion: 'Barcelona' }
 
-    const response = await fetch(`${BASE_URL}/jobs/${job.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(cambios),
-    })
+    await handlePutAndCheckStatus(`/jobs/${job.id}`, { body: cambios })
 
-    assert.strictEqual(response.status, 204)
-
-    const comprobacion = await fetch(`${BASE_URL}/jobs/${job.id}`)
-    const actualizado = await comprobacion.json()
+    const actualizado = await handleGetAndCheckStatus(`/jobs/${job.id}`)
 
     assert.strictEqual(actualizado.titulo, 'Título reemplazado')
     assert.strictEqual(actualizado.ubicacion, 'Barcelona')
@@ -199,13 +180,7 @@ describe('PUT /jobs/:id', () => {
   })
 
   test('Debe devolver 404 cuando el ID no existe', async () => {
-    const response = await fetch(`${BASE_URL}/jobs/${ID_INEXISTENTE}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(JOB_VALIDO),
-    })
-
-    assert.strictEqual(response.status, 404)
+    await handlePutAndCheckStatus(`/jobs/${ID_INEXISTENTE}`, { status: 404 })
   })
 })
 
@@ -213,16 +188,11 @@ describe('PATCH /jobs/:id', () => {
   test('Debe recibir 204 y actualizar solo los campos enviados', async () => {
     const job = await crearJob()
 
-    const response = await fetch(`${BASE_URL}/jobs/${job.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ titulo: 'Título parcheado', ubicacion: 'Valencia' }),
+    await handlePatchAndCheckStatus(`/jobs/${job.id}`, {
+      body: { titulo: 'Título parcheado', ubicacion: 'Valencia' },
     })
 
-    assert.strictEqual(response.status, 204)
-
-    const comprobacion = await fetch(`${BASE_URL}/jobs/${job.id}`)
-    const actualizado = await comprobacion.json()
+    const actualizado = await handleGetAndCheckStatus(`/jobs/${job.id}`)
 
     assert.strictEqual(actualizado.titulo, 'Título parcheado')
     assert.strictEqual(actualizado.ubicacion, 'Valencia')
@@ -231,13 +201,10 @@ describe('PATCH /jobs/:id', () => {
   })
 
   test('Debe devolver 404 cuando el ID no existe', async () => {
-    const response = await fetch(`${BASE_URL}/jobs/${ID_INEXISTENTE}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ titulo: 'Da igual' }),
+    await handlePatchAndCheckStatus(`/jobs/${ID_INEXISTENTE}`, {
+      body: { titulo: 'Da igual' },
+      status: 404,
     })
-
-    assert.strictEqual(response.status, 404)
   })
 })
 
@@ -245,18 +212,12 @@ describe('DELETE /jobs/:id', () => {
   test('Debe recibir 204 y eliminar el trabajo', async () => {
     const job = await crearJob()
 
-    const response = await fetch(`${BASE_URL}/jobs/${job.id}`, { method: 'DELETE' })
+    await handleDeleteAndCheckStatus(`/jobs/${job.id}`)
 
-    assert.strictEqual(response.status, 204)
-
-    const comprobacion = await fetch(`${BASE_URL}/jobs/${job.id}`)
-
-    assert.strictEqual(comprobacion.status, 404)
+    await handleGetAndCheckStatus(`/jobs/${job.id}`, 404)
   })
 
   test('Debe devolver 404 cuando el ID no existe', async () => {
-    const response = await fetch(`${BASE_URL}/jobs/${ID_INEXISTENTE}`, { method: 'DELETE' })
-
-    assert.strictEqual(response.status, 404)
+    await handleDeleteAndCheckStatus(`/jobs/${ID_INEXISTENTE}`, { status: 404 })
   })
 })
