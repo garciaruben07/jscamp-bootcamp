@@ -1,0 +1,42 @@
+name: 'Setup pnpm and Node.js for CI/CD'
+description: 'Setup pnpm and Node.js for CI/CD'
+
+inputs:
+  node-version:
+    description: 'Versión de Node.js que instalará actions/setup-node'
+    required: false
+    default: '24'
+  pnpm-version:
+    description: 'Versión de pnpm que instalará pnpm/action-setup'
+    required: false
+    default: '11'
+  cache:
+    description: 'Cachear el store de pnpm entre ejecuciones. Se desactiva en la matriz multiplataforma'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    # pnpm va primero porque setup-node necesita encontrarlo para poder cachear su store
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v6
+      with:
+        version: ${{ inputs.pnpm-version }}
+        run_install: false
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ inputs.node-version }}
+        # Los inputs de una composite action siempre son strings, de ahí la comparación
+        # con 'true'. Un cache vacío es lo que setup-node entiende como "no cachees"
+        cache: ${{ inputs.cache == 'true' && 'pnpm' || '' }}
+        cache-dependency-path: 12-ejercicio-cicd/pnpm-lock.yaml
+
+    # El workspace vive en un subdirectorio del repo, así que el install no se lanza
+    # desde la raíz del checkout sino desde la del monorepo
+    - name: Install dependencies
+      shell: bash
+      working-directory: 12-ejercicio-cicd
+      run: pnpm install --frozen-lockfile
