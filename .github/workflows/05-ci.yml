@@ -8,12 +8,20 @@ on:
     # ejercicio lanzaría siete jobs que no tienen nada que ver con lo que se ha tocado
     paths:
       - '12-ejercicio-cicd/**'
+      # Los workflows que viven dentro de la carpeta del ejercicio son la copia que se
+      # entrega, no código del monorepo: GitHub ni siquiera los ejecuta. Tocarlos no
+      # tiene por qué revalidar el frontend y el backend
+      - '!12-ejercicio-cicd/.github/**'
       - '.github/workflows/05-ci.yml'
       - '.github/actions/setup-pnpm-ci-cd/**'
   pull_request:
     branches: [main]
     paths:
       - '12-ejercicio-cicd/**'
+      # Los workflows que viven dentro de la carpeta del ejercicio son la copia que se
+      # entrega, no código del monorepo: GitHub ni siquiera los ejecuta. Tocarlos no
+      # tiene por qué revalidar el frontend y el backend
+      - '!12-ejercicio-cicd/.github/**'
       - '.github/workflows/05-ci.yml'
       - '.github/actions/setup-pnpm-ci-cd/**'
 
