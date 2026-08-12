@@ -1,11 +1,136 @@
+import { randomUUID } from 'node:crypto'
 import { createServer } from 'node:http'
+import { json } from 'node:stream/consumers'
 
-process.loadEnvFile()
+// Agregamos el puerto por default
+let port = 3000
 
-const port = process.env.PORT || 3000
+// En caso de que tengamos un .env, cambiamos el puerto.
+try {
+  process.loadEnvFile()
+  port = process.env.PORT ?? port
+} catch {}
 
-const server = createServer((req, res) => {
-  // TODO: Aquí irá la lógica del servidor
+/* Toda la API responde JSON, así que centralizamos cabecera, estado y serialización */
+function enviarJson(res, statusCode, datos) {
+  res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' })
+  res.end(JSON.stringify(datos))
+}
+
+/* Devuelve null si el parámetro no viene o no es un número usable, para poder ignorarlo */
+function leerNumero(searchParams, clave) {
+  const valor = searchParams.get(clave)
+
+  /* Sin esta guarda el parámetro ausente entra como Number(null), que es 0 y pasa
+     la validación: maxAge=0 y limit=0 dejarían la lista vacía siempre */
+  if (valor === null || valor.trim() === '') return null
+
+  const numero = Number(valor)
+
+  /* Number.isInteger descarta NaN, Infinity y decimales; el >= 0 descarta los negativos */
+  return Number.isInteger(numero) && numero >= 0 ? numero : null
+}
+
+/* Cada filtro se aplica solo si viene su parámetro, así se pueden combinar entre ellos */
+function filtrarUsuarios(users, searchParams) {
+  const name = searchParams.get('name')
+  const minAge = leerNumero(searchParams, 'minAge')
+  const maxAge = leerNumero(searchParams, 'maxAge')
+
+  let resultado = users
+
+  if (name !== null) {
+    const busqueda = name.trim().toLowerCase()
+    resultado = resultado.filter((user) => user.name.toLowerCase().includes(busqueda))
+  }
+
+  if (minAge !== null) {
+    resultado = resultado.filter((user) => user.age >= minAge)
+  }
+
+  if (maxAge !== null) {
+    resultado = resultado.filter((user) => user.age <= maxAge)
+  }
+
+  return resultado
+}
+
+/* La paginación va al final: se pagina sobre lo ya filtrado */
+function paginarUsuarios(users, searchParams) {
+  const limit = leerNumero(searchParams, 'limit')
+  const offset = leerNumero(searchParams, 'offset')
+
+  if (limit === null && offset === null) return users
+
+  /* Un offset negativo haría que slice contase desde el final */
+  const desde = Math.max(0, offset ?? 0)
+  const hasta = limit === null ? users.length : desde + Math.max(0, limit)
+
+  return users.slice(desde, hasta)
+}
+
+function listarUsuarios(req, res, searchParams) {
+  const filtrados = filtrarUsuarios(users, searchParams)
+
+  return enviarJson(res, 200, paginarUsuarios(filtrados, searchParams))
+}
+
+async function crearUsuario(req, res) {
+  let body
+
+  try {
+    body = await json(req)
+  } catch {
+    return enviarJson(res, 400, { error: 'El cuerpo de la petición no es un JSON válido' })
+  }
+
+  const { name, age } = body ?? {}
+
+  if (typeof name !== 'string' || name.trim() === '') {
+    return enviarJson(res, 400, { error: 'El campo name es obligatorio y debe ser texto' })
+  }
+
+  if (typeof age !== 'number' || !Number.isInteger(age) || age < 0) {
+    return enviarJson(res, 400, { error: 'El campo age es obligatorio y debe ser un entero positivo' })
+  }
+
+  const nuevoUsuario = { id: randomUUID(), name: name.trim(), age }
+  users.push(nuevoUsuario)
+
+  return enviarJson(res, 201, nuevoUsuario)
+}
+
+function comprobarSalud(req, res) {
+  return enviarJson(res, 200, { status: 'ok', uptime: process.uptime() })
+}
+
+/* Cada ruta agrupa los métodos que acepta: así se puede distinguir una ruta que no
+   existe (404) de una que sí existe pero no admite ese método (405) */
+const rutas = {
+  '/users': { GET: listarUsuarios, POST: crearUsuario },
+  '/health': { GET: comprobarSalud },
+}
+
+const server = createServer(async (req, res) => {
+  /* req.url llega sin origen, así que hace falta una base para poder parsearlo */
+  const { pathname, searchParams } = new URL(req.url, `http://${req.headers.host}`)
+
+  const metodos = rutas[pathname]
+
+  if (metodos === undefined) {
+    return enviarJson(res, 404, { error: 'Ruta no encontrada' })
+  }
+
+  const manejador = metodos[req.method]
+
+  if (manejador === undefined) {
+    /* La respuesta 405 obliga a indicar qué métodos sí acepta la ruta */
+    res.setHeader('Allow', Object.keys(metodos).join(', '))
+
+    return enviarJson(res, 405, { error: `El método ${req.method} no está permitido en ${pathname}` })
+  }
+
+  return manejador(req, res, searchParams)
 })
 
 server.listen(port, () => {
