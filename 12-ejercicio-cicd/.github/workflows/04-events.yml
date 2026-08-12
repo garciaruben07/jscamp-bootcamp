@@ -31,8 +31,12 @@ jobs:
           echo "Issue:       ${ISSUE_NUMBER:-(el evento no trae issue)}"
           echo "Comentario:  ${COMMENT_BODY:-(el evento no trae comentario)}"
 
-      # Solo al abrir la issue: sin filtrar por `action`, reasignarla volvería a comentar,
-      # y el comentario del bot dispara `issue_comment` otra vez
+      # Solo al abrir la issue: este workflow escucha `opened` y `assigned`, así que sin
+      # filtrar por `action` reasignarla volvería a soltar el mismo comentario.
+      #
+      # Lo que sí no hace falta vigilar es el bucle: el comentario lo publica el propio
+      # GITHUB_TOKEN del run, y GitHub no dispara workflows con los eventos que genera
+      # ese token, precisamente para que un bot no se responda a sí mismo sin parar
       - name: Agradecer el aporte
         if: github.event_name == 'issues' && github.event.action == 'opened'
         env:
