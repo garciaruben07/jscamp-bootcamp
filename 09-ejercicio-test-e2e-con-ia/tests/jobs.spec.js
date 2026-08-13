@@ -16,6 +16,26 @@ function articuloDelDetalle(page) {
   return page.getByRole('article').filter({ has: page.getByRole('heading', { level: 1 }) })
 }
 
+/* Devuelve el data attribute de todas las tarjetas, una vez la lista ya está filtrada.
+   Al aplicar un filtro la lista se repinta varias veces, y evaluateAll no reintenta: leerla
+   suelta la pilla a medias y devuelve los resultados anteriores, o ninguno. Por eso se
+   reintenta la lectura completa hasta que todas las tarjetas traen el valor esperado */
+async function atributosDeLosResultados(page, atributo, esperado) {
+  let valores = []
+
+  await expect
+    .poll(async () => {
+      valores = await page
+        .getByRole('article')
+        .evaluateAll((articles, attr) => articles.map((article) => article.getAttribute(attr)), atributo)
+
+      return valores.length > 0 && valores.every((valor) => valor === esperado)
+    })
+    .toBe(true)
+
+  return valores
+}
+
 /* Deja la página de búsqueda lista, con resultados ya pintados */
 async function irABusqueda(page, query = '') {
   await page.goto(`${BASE_URL}/search${query}`)
@@ -43,8 +63,10 @@ test.describe('Búsqueda de empleos', () => {
 
     const resultados = page.getByRole('article')
 
+    /* not.toHaveCount reintenta hasta que se cumple. Un count() suelto lee el DOM una sola
+       vez y puede caer justo en el instante en que la lista se está repintando */
+    await expect(resultados).not.toHaveCount(0)
     await expect(resultados.first()).toBeVisible()
-    expect(await resultados.count()).toBeGreaterThan(0)
   })
 })
 
@@ -77,39 +99,29 @@ test.describe('Flujo completo de aplicación', () => {
 })
 
 test.describe('Filtros', () => {
-  /* Los dos selects se localizan por id y no por rol porque no tienen ninguna etiqueta
-     asociada: sin nombre accesible, getByRole('combobox') no puede distinguirlos */
   test('filtra por ubicación remota', async ({ page }) => {
     await irABusqueda(page)
 
-    await page.locator('#filter-location').selectOption('remoto')
+    await page.getByRole('combobox', { name: 'Ubicación' }).selectOption('remoto')
 
     await expect(page).toHaveURL(/type=remoto/)
-    await expect(page.getByRole('article').first()).toBeVisible()
 
     /* Cada tarjeta guarda su modalidad en un data attribute */
-    const modalidades = await page.getByRole('article').evaluateAll((articles) =>
-      articles.map((article) => article.getAttribute('data-modalidad'))
-    )
+    const modalidades = await atributosDeLosResultados(page, 'data-modalidad', 'remoto')
 
     expect(modalidades.length).toBeGreaterThan(0)
-    expect(modalidades.every((modalidad) => modalidad === 'remoto')).toBe(true)
   })
 
   test('filtra por nivel senior', async ({ page }) => {
     await irABusqueda(page)
 
-    await page.locator('#filter-experience-level').selectOption('senior')
+    await page.getByRole('combobox', { name: 'Nivel de experiencia' }).selectOption('senior')
 
     await expect(page).toHaveURL(/level=senior/)
-    await expect(page.getByRole('article').first()).toBeVisible()
 
-    const niveles = await page.getByRole('article').evaluateAll((articles) =>
-      articles.map((article) => article.getAttribute('data-nivel'))
-    )
+    const niveles = await atributosDeLosResultados(page, 'data-nivel', 'senior')
 
     expect(niveles.length).toBeGreaterThan(0)
-    expect(niveles.every((nivel) => nivel === 'senior')).toBe(true)
   })
 })
 
