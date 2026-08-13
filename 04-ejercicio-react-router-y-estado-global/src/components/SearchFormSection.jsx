@@ -98,6 +98,10 @@ export function SearchFormSection({ onTextFilter, onSearch, initialText, initial
             <path d="M21 21l-6 -6" />
           </svg>
 
+          <label className="sr-only" htmlFor="empleos-search-input">
+            Buscar trabajos
+          </label>
+
           <input
             ref={inputRef}
             name={idText}
@@ -114,6 +118,12 @@ export function SearchFormSection({ onTextFilter, onSearch, initialText, initial
         </div>
 
         <div className="search-filters">
+          {/* El primer option hace de marcador dentro del desplegable, pero no da nombre
+              accesible al campo: para eso hace falta una etiqueta asociada por su id */}
+          <label className="sr-only" htmlFor="filter-technology">
+            Tecnología
+          </label>
+
           <select name={idTechnology} id="filter-technology" defaultValue={initialFilters.technology}>
             <option value="">Tecnología</option>
             <optgroup label="Tecnologías populares">
@@ -132,6 +142,10 @@ export function SearchFormSection({ onTextFilter, onSearch, initialText, initial
             <option value="php">PHP</option>
           </select>
 
+          <label className="sr-only" htmlFor="filter-location">
+            Ubicación
+          </label>
+
           <select name={idLocation} id="filter-location" defaultValue={initialFilters.location}>
             <option value="">Ubicación</option>
             <option value="remoto">Remoto</option>
@@ -140,6 +154,10 @@ export function SearchFormSection({ onTextFilter, onSearch, initialText, initial
             <option value="monterrey">Monterrey</option>
             <option value="barcelona">Barcelona</option>
           </select>
+
+          <label className="sr-only" htmlFor="filter-experience-level">
+            Nivel de experiencia
+          </label>
 
           <select name={idExperienceLevel} id="filter-experience-level" defaultValue={initialFilters.experienceLevel}>
             <option value="">Nivel de experiencia</option>

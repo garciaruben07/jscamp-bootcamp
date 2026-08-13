@@ -34,7 +34,12 @@ export function HomePage () {
               <path d="M21 21l-6 -6" />
             </svg>
 
+            <label className="sr-only" htmlFor="home-search-input">
+              Buscar empleos
+            </label>
+
             <input
+              id="home-search-input"
               name="search"
               required
               type="search"
