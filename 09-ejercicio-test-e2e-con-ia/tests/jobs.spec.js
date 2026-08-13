@@ -3,10 +3,23 @@ import { expect, test } from '@playwright/test'
 
 const BASE_URL = 'http://localhost:5173'
 
+/* El título de cada tarjeta es el enlace al detalle. Se localiza por rol y no por la
+   estructura del HTML, para que un cambio de maquetación no se lleve por delante los tests */
+function enlaceDelPrimerResultado(page) {
+  return page.getByRole('article').first().getByRole('heading', { level: 3 }).getByRole('link')
+}
+
+/* El artículo del detalle es el único con un encabezado de nivel 1. Filtrar por él, en vez
+   de por su clase CSS, resuelve además la ambigüedad del instante en el que la lista de
+   resultados todavía no se ha desmontado y sus botones "Aplicar" siguen en el DOM */
+function articuloDelDetalle(page) {
+  return page.getByRole('article').filter({ has: page.getByRole('heading', { level: 1 }) })
+}
+
 /* Deja la página de búsqueda lista, con resultados ya pintados */
 async function irABusqueda(page, query = '') {
   await page.goto(`${BASE_URL}/search${query}`)
-  await expect(page.locator('article').first()).toBeVisible()
+  await expect(page.getByRole('article').first()).toBeVisible()
 }
 
 test.describe('Navegación básica', () => {
@@ -28,7 +41,6 @@ test.describe('Búsqueda de empleos', () => {
     /* La búsqueda viaja en la URL, así que la propia navegación ya es una comprobación */
     await expect(page).toHaveURL(/\/search\?.*text=React/)
 
-    // Podemos usar un getByRole
     const resultados = page.getByRole('article')
 
     await expect(resultados.first()).toBeVisible()
@@ -43,15 +55,12 @@ test.describe('Flujo completo de aplicación', () => {
     await page.getByRole('searchbox').fill('JavaScript')
     await page.getByRole('button', { name: 'Buscar' }).click()
 
-    // Evitemos usar `locator`
-    const firstResult = page.getByRole('article').first()
-    
-    const firstTitleLinkResult = firstResult.getByRole('heading', { level: 3 }).getByRole('link')
-    // const primerResultado = page.locator('article h3 a').first()
-    await expect(firstTitleLinkResult).toBeVisible()
+    const primerResultado = enlaceDelPrimerResultado(page)
 
-    const titulo = await firstTitleLinkResult.textContent()
-    await firstTitleLinkResult.click()
+    await expect(primerResultado).toBeVisible()
+
+    const titulo = await primerResultado.textContent()
+    await primerResultado.click()
 
     /* Esperamos a la URL del detalle: si no, los botones del listado siguen en pantalla */
     await expect(page).toHaveURL(/\/job\//)
@@ -60,7 +69,7 @@ test.describe('Flujo completo de aplicación', () => {
     await page.getByRole('button', { name: 'Iniciar sesión' }).click()
     await expect(page.getByRole('button', { name: 'Cerrar sesión' })).toBeVisible()
 
-    const detalle = page.locator('article.job-detail')
+    const detalle = articuloDelDetalle(page)
     await detalle.getByRole('button', { name: 'Aplicar', exact: true }).click()
 
     await expect(detalle.getByRole('button', { name: 'Aplicado' })).toBeVisible()
@@ -68,6 +77,8 @@ test.describe('Flujo completo de aplicación', () => {
 })
 
 test.describe('Filtros', () => {
+  /* Los dos selects se localizan por id y no por rol porque no tienen ninguna etiqueta
+     asociada: sin nombre accesible, getByRole('combobox') no puede distinguirlos */
   test('filtra por ubicación remota', async ({ page }) => {
     await irABusqueda(page)
 
@@ -118,15 +129,15 @@ test.describe('Paginación', () => {
   test('al pasar a la siguiente página cambian los resultados', async ({ page }) => {
     await irABusqueda(page)
 
-    const tituloPrimeraPagina = await page.locator('article h3').first().textContent()
+    const tituloPrimeraPagina = await enlaceDelPrimerResultado(page).textContent()
 
     const paginacion = page.getByRole('navigation', { name: 'Paginación de los resultados' })
     await paginacion.getByRole('link', { name: 'Página siguiente' }).click()
 
     await expect(page).toHaveURL(/page=2/)
-    await expect(page.locator('article').first()).toBeVisible()
+    await expect(page.getByRole('article').first()).toBeVisible()
 
-    await expect(page.locator('article h3').first()).not.toHaveText(tituloPrimeraPagina ?? '')
+    await expect(enlaceDelPrimerResultado(page)).not.toHaveText(tituloPrimeraPagina ?? '')
   })
 })
 
@@ -134,8 +145,7 @@ test.describe('Detalle de empleo', () => {
   test('muestra el detalle del empleo al pulsar en un resultado', async ({ page }) => {
     await irABusqueda(page)
 
-    // Aquí podemos aplicar lo mismo que en los tests anteriores, obtener el primer article por getByRole, y luego acceder al link dentro por role también
-    const primerResultado = page.locator('article h3 a').first()
+    const primerResultado = enlaceDelPrimerResultado(page)
     const titulo = await primerResultado.textContent()
 
     await primerResultado.click()
@@ -149,12 +159,10 @@ test.describe('Detalle de empleo', () => {
   test('permite aplicar a la oferta desde su detalle', async ({ page }) => {
     await irABusqueda(page)
 
-    await page.locator('article h3 a').first().click()
+    await enlaceDelPrimerResultado(page).click()
     await expect(page).toHaveURL(/\/job\//)
 
-    /* Buscamos dentro del artículo del detalle: la lista tarda un instante en desmontarse
-       y sus botones "Aplicar" harían ambigua la búsqueda en toda la página */
-    const detalle = page.locator('article.job-detail')
+    const detalle = articuloDelDetalle(page)
     await expect(detalle).toBeVisible()
 
     const botonAplicar = detalle.getByRole('button', { name: 'Aplicar', exact: true })
