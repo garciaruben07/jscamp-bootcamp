@@ -1,0 +1,31 @@
+# Se llama Dockerfile.vercel y no Dockerfile porque es el nombre que busca Vercel para
+# construir el proyecto. En local hay que pasárselo a mano con -f:
+#   docker build -f Dockerfile.vercel -t midu-vercel .
+
+# ================================
+# ETAPA 1: COMPILAR EL BINARIO
+# ================================
+
+# El toolchain de Go solo vive en esta etapa: no hace falta tener Go instalado en la máquina
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /src
+
+COPY . .
+
+# Un binario de Go es estático, así que no necesita el compilador ni librerías para ejecutarse
+RUN go build -o /server main.go
+
+# ================================
+# ETAPA 2: RUNTIME
+# ================================
+
+# Alpine pelada: aquí solo hay que ejecutar el binario ya compilado
+FROM alpine:3.20 AS runner
+
+COPY --from=builder /server /server
+
+# La app lee el puerto de la variable PORT, que es la que inyecta Vercel, y cae al 80 si no está
+EXPOSE 80
+
+CMD ["/server"]
