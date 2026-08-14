@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 import { db } from '../db/database'
-import type { Job, JobData, CreateJobDTO, UpdateJobDTO, JobFilters } from '../types'
+import type { CreateJobDTO, Job, JobData, JobFilters, UpdateJobDTO } from '../types'
 
 // ================================
 // FILA QUE DEVUELVE SQLITE
@@ -185,7 +185,19 @@ export class JobModel {
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
-    const rows = db.prepare(`${SELECT_JOB} ${where}`).all(...values) as JobRow[]
+
+    // Para dar un plus, agregamos filtros por limit y offset. Lo que hiciste no está mal, es solo para que tengas esto implementado y lo puedas ver
+    const limit = filters?.limit ?? 10 // usamos un valor definido, pero podemos usar una variable global
+    const offset = filters?.offset ?? 0
+
+    const pagination = `
+      ORDER BY j.id
+      LIMIT ? OFFSET ?
+    `
+
+    const rows = db
+      .prepare(`${SELECT_JOB} ${where} ${pagination}`)
+      .all(...values, limit, offset) as JobRow[]
 
     return rows.map(toJob)
   }
