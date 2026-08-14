@@ -4,8 +4,15 @@
   "description": "",
   "main": "index.ts",
   "type": "module",
-  "scripts": {},
+  "scripts": {
+    "start": "node --experimental-strip-types index.ts",
+    "typecheck": "tsc --noEmit"
+  },
   "keywords": [],
   "author": "",
-  "license": ""
+  "license": "",
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "typescript": "^7.0.2"
+  }
 }
