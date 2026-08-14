@@ -1,0 +1,7 @@
+node_modules
+dist
+
+# Base de datos generada por el seed
+jobs.db
+jobs.db-shm
+jobs.db-wal
