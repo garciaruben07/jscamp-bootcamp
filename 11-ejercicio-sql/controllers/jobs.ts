@@ -1,29 +1,28 @@
 import type { Request, Response } from 'express'
+import { PAGINATION } from '../config'
 import { JobModel } from '../models/job'
-import type { JobFilters } from '../types'
+import type { JobQuery } from '../types'
 
 export class JobController {
   // GET /jobs
   // Query params tipados
-  static async getAll(req: Request<{}, {}, {}, JobFilters>, res: Response): Promise<void> {
+  static async getAll(req: Request<{}, {}, {}, JobQuery>, res: Response): Promise<void> {
     const { tech, modality, level } = req.query
 
-    // 1. Pasamos los valores a números
+    // Los query params llegan como texto, así que hay que convertirlos
     const requestedLimit = Number(req.query.limit)
     const requestedOffset = Number(req.query.offset)
 
-    // 2. Definimos los valores por defecto (lo mismo que en `models/job.ts`): Podemos usar variables globales
-    const defaultLimit = 10
-    const maxLimit = 100
-
-    // 3. Evitamos que el usuario pase NaN, Infinity, -Infinity, y si sea un número entero mayor a 0.
+    // Number.isInteger descarta de una vez NaN, Infinity y los decimales: un `?limit=abc`
+    // o un `?limit=-5` caen al valor por defecto en lugar de llegar a la consulta.
+    // El techo evita que una sola petición se lleve la tabla entera
     const limit = Number.isInteger(requestedLimit) && requestedLimit > 0
-      ? Math.min(requestedLimit, maxLimit)
-      : defaultLimit
+      ? Math.min(requestedLimit, PAGINATION.maxLimit)
+      : PAGINATION.defaultLimit
 
     const offset = Number.isInteger(requestedOffset) && requestedOffset >= 0
       ? requestedOffset
-      : 0
+      : PAGINATION.defaultOffset
 
     const jobs = await JobModel.getAll({ tech, modality, level, limit, offset })
     res.json(jobs)
