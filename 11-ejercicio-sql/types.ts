@@ -43,10 +43,23 @@ export type UpdateJobDTO = Partial<CreateJobDTO>
 // FILTROS
 // ================================
 
+// Lo que llega por la URL. Express entrega los query params siempre como texto, aunque
+// representen un número, así que `limit` y `offset` son string hasta que se validan
+export interface JobQuery {
+  tech?: string
+  modality?: JobData['modality']
+  level?: JobData['level']
+  limit?: string
+  offset?: string
+}
+
+// Lo que consume el modelo, ya convertido y dentro de rango
 export interface JobFilters {
   tech?: string
   modality?: JobData['modality']
   level?: JobData['level']
+  limit?: number
+  offset?: number
 }
 
 // ================================
