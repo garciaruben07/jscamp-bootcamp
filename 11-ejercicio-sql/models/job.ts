@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import { PAGINATION } from '../config'
 import { db } from '../db/database'
 import type { CreateJobDTO, Job, JobData, JobFilters, UpdateJobDTO } from '../types'
 
@@ -186,10 +187,14 @@ export class JobModel {
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
 
-    // Para dar un plus, agregamos filtros por limit y offset. Lo que hiciste no está mal, es solo para que tengas esto implementado y lo puedas ver
-    const limit = filters?.limit ?? 10 // usamos un valor definido, pero podemos usar una variable global
-    const offset = filters?.offset ?? 0
+    // El modelo también pagina por su cuenta, porque se puede llamar desde fuera del
+    // controlador: sin estos valores por defecto, un getAll() sin filtros devolvería la
+    // tabla entera. Los límites salen de config para no tener dos verdades distintas
+    const limit = filters?.limit ?? PAGINATION.defaultLimit
+    const offset = filters?.offset ?? PAGINATION.defaultOffset
 
+    // El ORDER BY no es decorativo: sin un orden fijo, SQLite no garantiza que dos
+    // páginas consecutivas no repitan u omitan filas
     const pagination = `
       ORDER BY j.id
       LIMIT ? OFFSET ?
