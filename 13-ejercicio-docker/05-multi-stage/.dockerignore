@@ -1,0 +1,16 @@
+# El dist/ del host se ignora a propósito: el bundle que vale es el que compila la etapa
+# builder dentro de la imagen, no el que haya quedado de un npm run build local
+node_modules
+dist
+
+.git
+.gitignore
+
+*.md
+
+.env
+.env.*
+
+.DS_Store
+
+.vscode

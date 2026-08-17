@@ -1,0 +1,7 @@
+node_modules
+dist
+
+# El contador de visitas lo genera el volumen o el bind mount de la tarea 6
+06-volumenes/data
+
+__pycache__

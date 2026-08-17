@@ -1,0 +1,18 @@
+# Todo lo que aparezca aquí no se envía siquiera al daemon como contexto de build.
+# Además de imágenes más ligeras, evita dos problemas concretos:
+# - node_modules del host puede traer binarios compilados para macOS que no valen en Alpine
+# - los .env no deben quedar horneados en la imagen: las variables se pasan al arrancar
+
+node_modules
+
+.git
+.gitignore
+
+*.md
+
+.env
+.env.*
+
+.DS_Store
+
+.vscode

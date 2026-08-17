@@ -5,7 +5,7 @@
   "description": "Ejercicio final del módulo de DevOps y Docker",
   "scripts": {
     "01:por-que:node22": "docker build -t por-que-node22 01-por-que && docker run --rm por-que-node22",
-    "01:por-que:node16": "docker build -t por-que-node16 01-por-que && docker run --rm por-que-node16",
+    "01:por-que:node16": "docker build --build-arg NODE_VERSION=16 -t por-que-node16 01-por-que && docker run --rm por-que-node16",
     "02:hola:build": "docker build -t hola-docker 02-hola-docker",
     "02:hola:run": "docker run --rm hola-docker",
     "03:node-web:build": "docker build -t midu-web 03-node-web",
